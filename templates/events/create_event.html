@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Create Event{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-calendar-plus me-2"></i> Create New Event
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-mookh-primary">
+                            <i class="bi bi-save me-2"></i> Create Event
+                        </button>
+                        <a href="{% url 'event_list' %}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Event Creation Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li>Ensure event dates are accurate and in the future</li>
+                    <li>Provide clear location details for team members</li>
+                    <li>Add detailed description of event requirements</li>
+                    <li>Set appropriate event status (Upcoming by default)</li>
+                    <li>After creating event, assign team members</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

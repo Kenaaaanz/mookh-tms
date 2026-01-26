@@ -1,0 +1,156 @@
+/* Mookh Ticket System Custom Styles */
+
+/* Card hover effects */
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: 1px solid #e9ecef;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Status badges */
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 50rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-pending {
+    background-color: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FBBF24;
+}
+
+.status-approved {
+    background-color: #D1FAE5;
+    color: #065F46;
+    border: 1px solid #10B981;
+}
+
+.status-rejected {
+    background-color: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #EF4444;
+}
+
+.status-verified {
+    background-color: #DBEAFE;
+    color: #1E40AF;
+    border: 1px solid #3B82F6;
+}
+
+.status-draft {
+    background-color: #F3F4F6;
+    color: #374151;
+    border: 1px solid #D1D5DB;
+}
+
+.status-paid {
+    background-color: #D1FAE5;
+    color: #065F46;
+    border: 1px solid #10B981;
+}
+
+.status-upcoming {
+    background-color: #DBEAFE;
+    color: #1E40AF;
+    border: 1px solid #3B82F6;
+}
+
+.status-ongoing {
+    background-color: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FBBF24;
+}
+
+.status-completed {
+    background-color: #D1FAE5;
+    color: #065F46;
+    border: 1px solid #10B981;
+}
+
+/* Button styles */
+.btn-mookh-primary {
+    background: linear-gradient(135deg, var(--mookh-primary) 0%, #2563EB 100%);
+    border: none;
+    color: white;
+    font-weight: 500;
+    padding: 0.5rem 1.5rem;
+}
+
+.btn-mookh-primary:hover {
+    background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(30, 58, 138, 0.3);
+}
+
+/* Table styles */
+.table-hover tbody tr:hover {
+    background-color: rgba(30, 58, 138, 0.05);
+}
+
+/* Sidebar active link */
+.sidebar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.375rem;
+}
+
+/* Dashboard stats cards */
+.stat-card {
+    border-left: 4px solid var(--mookh-primary);
+}
+
+/* Form controls */
+.form-control:focus {
+    border-color: var(--mookh-secondary);
+    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+}
+
+/* Alert styles */
+.alert-mookh {
+    border-left: 4px solid var(--mookh-primary);
+}
+
+/* Progress bars */
+.progress {
+    height: 0.5rem;
+    border-radius: 1rem;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+}
+
+/* Badge styles */
+.badge-mookh {
+    background-color: var(--mookh-primary);
+    color: white;
+}
+
+/* Custom shadows */
+.shadow-mookh {
+    box-shadow: 0 4px 6px -1px rgba(30, 58, 138, 0.1), 0 2px 4px -1px rgba(30, 58, 138, 0.06);
+}
+
+/* Loading spinner */
+.spinner-mookh {
+    color: var(--mookh-primary);
+}
+
+/* Print styles for invoices */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}

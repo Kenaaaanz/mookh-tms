@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'event_list' %}">Events</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ event.name }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mookh-text-primary">{{ event.name }}</h2>
+            <div>
+                {% if user.is_staff %}
+                <a href="{% url 'assign_team_members' event.id %}" class="btn btn-success">
+                    <i class="bi bi-people me-2"></i> Assign Team
+                </a>
+                {% endif %}
+                {% if user_assignment and not user_assignment.report %}
+                <a href="{% url 'create_report' user_assignment.id %}" class="btn btn-warning">
+                    <i class="bi bi-file-text me-2"></i> Submit Report
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <p class="text-muted">{{ event.location }} • {{ event.start_date|date:"F d, Y" }}</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Event Details -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Event Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Event Name:</strong><br>{{ event.name }}</p>
+                        <p><strong>Location:</strong><br>{{ event.location }}</p>
+                        <p><strong>Status:</strong><br>
+                            <span class="status-badge status-{{ event.status }}">
+                                {{ event.get_status_display }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Start Date:</strong><br>{{ event.start_date|date:"F d, Y H:i" }}</p>
+                        <p><strong>End Date:</strong><br>{{ event.end_date|date:"F d, Y H:i" }}</p>
+                        <p><strong>Created By:</strong><br>{{ event.created_by.get_full_name }}</p>
+                    </div>
+                </div>
+                
+                {% if event.description %}
+                <hr>
+                <h6>Description</h6>
+                <p>{{ event.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Team Members -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Team Members</h5>
+            </div>
+            <div class="card-body">
+                {% if assignments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments %}
+                            <tr>
+                                <td>
+                                    {{ assignment.team_member.user.get_full_name }}
+                                    {% if assignment.is_team_lead %}
+                                    <span class="badge bg-warning text-dark ms-2">Team Lead</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ assignment.team_member.user.email }}</td>
+                                <td>{{ assignment.team_member.phone }}</td>
+                                <td>Team Member</td>
+                                <td>
+                                    {% if assignment.team_member.is_verified %}
+                                    <span class="badge bg-success">Verified</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-people" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-2">No team members assigned yet</p>
+                    {% if user.is_staff %}
+                    <a href="{% url 'assign_team_members' event.id %}" class="btn btn-success">
+                        Assign Team Members
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if is_assigned and not user_assignment.invoices.exists %}
+                    <a href="{% url 'create_invoice' user_assignment.id %}" class="btn btn-success">
+                        <i class="bi bi-receipt me-2"></i> Create Invoice
+                    </a>
+                    {% endif %}
+                    
+                    {% if is_assigned and not user_assignment.report %}
+                    <a href="{% url 'create_report' user_assignment.id %}" class="btn btn-warning">
+                        <i class="bi bi-file-text me-2"></i> Submit Report
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.is_staff %}
+                    <a href="{% url 'admin:events_event_change' event.id %}" class="btn btn-primary">
+                        <i class="bi bi-pencil me-2"></i> Edit Event
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Event Reports -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Event Reports</h5>
+            </div>
+            <div class="card-body">
+                {% if reports %}
+                <div class="list-group">
+                    {% for report in reports|slice:":3" %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ report.event_assignment.team_member.user.get_full_name }}</h6>
+                            <span class="badge bg-{{ report.status|yesno:'success,warning,danger' }}">
+                                {{ report.get_status_display }}
+                            </span>
+                        </div>
+                        <p class="mb-1 small">{{ report.work_summary|truncatechars:60 }}</p>
+                        <small class="text-muted">{{ report.submitted_at|date:"M d" }}</small>
+                        <div class="mt-2">
+                            <a href="{% url 'download_report' report.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-download"></i>
+                            </a>
+                            {% if user.is_staff %}
+                            <a href="{% url 'review_report' report.id %}" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-check-circle"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No reports submitted yet</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Invoices -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Invoices</h5>
+            </div>
+            <div class="card-body">
+                {% if invoices %}
+                <div class="list-group">
+                    {% for invoice in invoices|slice:":3" %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Invoice #{{ invoice.id }}</h6>
+                            <span class="badge bg-{{ invoice.status|yesno:'success,warning,info' }}">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        </div>
+                        <p class="mb-1 small">{{ invoice.event_assignment.team_member.user.get_full_name }}</p>
+                        <p class="mb-1"><strong>Ksh{{ invoice.total_amount }}</strong></p>
+                        <div class="mt-2">
+                            <a href="{% url 'download_invoice' invoice.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-download"></i>
+                            </a>
+                            {% if user.is_staff and not invoice.is_verified %}
+                            <a href="{% url 'verify_invoice' invoice.id %}" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-check-circle"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No invoices yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

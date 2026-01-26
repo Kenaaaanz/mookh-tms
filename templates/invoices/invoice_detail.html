@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block title %}Invoice #{{ invoice.id }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'my_invoices' %}">My Invoices</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Invoice #{{ invoice.id }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mookh-text-primary">Invoice #{{ invoice.id }}</h2>
+            <div>
+                <a href="{% url 'download_invoice' invoice.id %}" class="btn btn-primary">
+                    <i class="bi bi-download me-2"></i> Download PDF
+                </a>
+                {% if invoice.status == 'draft' %}
+                <a href="{% url 'submit_invoice' invoice.id %}" class="btn btn-success" 
+                   onclick="return confirm('Submit this invoice for admin verification?');">
+                    <i class="bi bi-send me-2"></i> Submit Invoice
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <p class="text-muted">Event: {{ invoice.event_assignment.event.name }}</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Invoice Details -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Invoice Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Invoice Number:</strong> #{{ invoice.id }}</p>
+                        <p><strong>Event:</strong> {{ invoice.event_assignment.event.name }}</p>
+                        <p><strong>Location:</strong> {{ invoice.event_assignment.event.location }}</p>
+                        <p><strong>Event Dates:</strong> 
+                            {{ invoice.event_assignment.event.start_date|date:"M d, Y" }} - 
+                            {{ invoice.event_assignment.event.end_date|date:"M d, Y" }}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Invoice Date:</strong> {{ invoice.invoice_date|date:"M d, Y" }}</p>
+                        <p><strong>Due Date:</strong> {{ invoice.due_date|date:"M d, Y" }}</p>
+                        <p><strong>Status:</strong> 
+                            <span class="status-badge status-{{ invoice.status }}">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        </p>
+                        <p><strong>Payment Method:</strong> 
+                            <span class="badge bg-{% if invoice.payment_method == 'mpesa' %}success{% else %}secondary{% endif %}">
+                                {{ invoice.get_payment_method_display }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Invoice Items -->
+                <h6>Invoice Items</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Description</th>
+                                <th>Days</th>
+                                <th>Daily Rate</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Event Ticket Validation Services</td>
+                                <td>{{ invoice.number_of_days }}</td>
+                                <td>KSh {{ invoice.daily_rate|floatformat:2 }}</td>
+                                <td>KSh {{ invoice.total_amount|floatformat:2 }}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="3" class="text-end">Total Amount:</th>
+                                <th>KSh {{ invoice.total_amount|floatformat:2 }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                {% if invoice.additional_notes %}
+                <div class="mt-4">
+                    <h6>Additional Notes:</h6>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            {{ invoice.additional_notes|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Payment Information -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Payment Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>M-Pesa Number:</strong><br>{{ invoice.event_assignment.team_member.mpesa_number }}</p>
+                <p><strong>Team Member:</strong><br>{{ invoice.event_assignment.team_member.user.get_full_name }}</p>
+                
+                {% if invoice.mpesa_transaction_id %}
+                <hr>
+                <p><strong>M-Pesa Transaction ID:</strong><br>{{ invoice.mpesa_transaction_id }}</p>
+                {% endif %}
+                
+                {% if invoice.mpesa_confirmation_code %}
+                <p><strong>M-Pesa Confirmation Code:</strong><br>{{ invoice.mpesa_confirmation_code }}</p>
+                {% endif %}
+                
+                {% if invoice.paid_at %}
+                <hr>
+                <p><strong>Paid Date:</strong><br>{{ invoice.paid_at|date:"M d, Y" }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Invoice Actions -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Invoice Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'download_invoice' invoice.id %}" class="btn btn-primary">
+                        <i class="bi bi-download me-2"></i> Download PDF
+                    </a>
+                    
+                    {% if invoice.status == 'draft' %}
+                    <a href="{% url 'submit_invoice' invoice.id %}" class="btn btn-success" 
+                       onclick="return confirm('Submit this invoice for admin verification?');">
+                        <i class="bi bi-send me-2"></i> Submit for Verification
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'event_detail' invoice.event_assignment.event.id %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-calendar-event me-2"></i> View Event
+                    </a>
+                    
+                    <a href="{% url 'my_invoices' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left me-2"></i> Back to Invoices
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Invoice Status -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Invoice Status Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item {% if invoice.status != 'draft' %}completed{% endif %}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6>Draft Created</h6>
+                            <p class="text-muted mb-0">{{ invoice.created_at|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if invoice.status in 'submitted,verified,paid' %}completed{% endif %}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6>Submitted</h6>
+                            {% if invoice.status in 'submitted,verified,paid' %}
+                            <p class="text-muted mb-0">Submitted for verification</p>
+                            {% else %}
+                            <p class="text-muted mb-0">Pending submission</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if invoice.status in 'verified,paid' %}completed{% endif %}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6>Verified</h6>
+                            {% if invoice.is_verified %}
+                            <p class="text-muted mb-0">{{ invoice.verified_at|date:"M d, Y" }}</p>
+                            {% else %}
+                            <p class="text-muted mb-0">Pending admin verification</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if invoice.status == 'paid' %}completed{% endif %}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6>Paid</h6>
+                            {% if invoice.status == 'paid' %}
+                            <p class="text-muted mb-0">{{ invoice.paid_at|date:"M d, Y" }}</p>
+                            {% else %}
+                            <p class="text-muted mb-0">Payment pending</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    border: 2px solid #fff;
+}
+
+.timeline-item.completed .timeline-marker {
+    background-color: var(--mookh-primary);
+}
+
+.timeline-content h6 {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.timeline-content p {
+    font-size: 0.8rem;
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}
+{% endblock %}

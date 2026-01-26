@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Submit Event Report{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'event_detail' assignment.event.id %}">{{ assignment.event.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Submit Report</li>
+            </ol>
+        </nav>
+        
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">
+                    <i class="bi bi-file-text me-2"></i> Submit Event Report
+                </h4>
+                <p class="mb-0 mt-2">Event: {{ assignment.event.name }}</p>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Event:</strong> {{ assignment.event.name }}</p>
+                                        <p><strong>Location:</strong> {{ assignment.event.location }}</p>
+                                        <p><strong>Dates:</strong> {{ assignment.event.start_date|date:"M d, Y" }} - {{ assignment.event.end_date|date:"M d, Y" }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Team Member:</strong> {{ assignment.team_member.user.get_full_name }}</p>
+                                        <p><strong>Role:</strong> {% if assignment.is_team_lead %}Team Lead{% else %}Team Member{% endif %}</p>
+                                        <p><strong>Report Status:</strong> <span class="badge bg-warning">New Report</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    <div class="alert alert-info mt-4">
+                        <h6><i class="bi bi-lightbulb me-2"></i>Report Guidelines</h6>
+                        <ul class="mb-0">
+                            <li>Be specific about your tasks and responsibilities</li>
+                            <li>Include total hours worked accurately</li>
+                            <li>Mention any challenges faced during the event</li>
+                            <li>Provide constructive suggestions for improvement</li>
+                            <li>Reports will be reviewed by administration</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-send me-2"></i> Submit Report
+                        </button>
+                        <a href="{% url 'event_detail' assignment.event.id %}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

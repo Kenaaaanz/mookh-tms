@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Create Invoice{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'event_detail' assignment.event.id %}">{{ assignment.event.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Create Invoice</li>
+            </ol>
+        </nav>
+        
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-receipt me-2"></i> Create Invoice
+                </h4>
+                <p class="mb-0 mt-2">Event: {{ assignment.event.name }}</p>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>Invoice Details</h6>
+                                <p><strong>Event:</strong> {{ assignment.event.name }}</p>
+                                <p><strong>Team Member:</strong> {{ assignment.team_member.user.get_full_name }}</p>
+                                <p><strong>Hourly Rate:</strong> Ksh{{ assignment.team_member.hourly_rate }}</p>
+                                <p><strong>Role:</strong> {% if assignment.is_team_lead %}Team Lead{% else %}Team Member{% endif %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>Event Details</h6>
+                                <p><strong>Location:</strong> {{ assignment.event.location }}</p>
+                                <p><strong>Dates:</strong> {{ assignment.event.start_date|date:"M d" }} - {{ assignment.event.end_date|date:"M d, Y" }}</p>
+                                <p><strong>Bank Details:</strong> {{ assignment.team_member.bank_name }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.number_of_days|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.daily_rate|as_crispy_field }}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.payment_method|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.due_date|as_crispy_field }}
+                    </div>
+                </div>
+                
+                {{ form.additional_notes|as_crispy_field }}
+                
+                <!-- Amount Preview -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Amount Preview</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>Days:</strong> <span id="previewDays">1</span></p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1"><strong>Daily Rate:</strong> KSh <span id="previewRate">0</span></p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-0"><strong>Total Amount:</strong></p>
+                                <h4 class="text-success" id="previewTotal">KSh 0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payment Information -->
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle me-2"></i>Payment Information</h6>
+                    <p class="mb-2"><strong>M-Pesa Number:</strong> {{ assignment.team_member.mpesa_number }}</p>
+                    <p class="mb-0"><strong>Payment Method:</strong> All payments are processed through M-Pesa. You will receive payment to the registered M-Pesa number.</p>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-save me-2"></i> Create Invoice
+                    </button>
+                    <a href="{% url 'event_detail' assignment.event.id %}" class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const daysInput = document.querySelector('#id_number_of_days');
+    const rateInput = document.querySelector('#id_daily_rate');
+    const previewDays = document.getElementById('previewDays');
+    const previewRate = document.getElementById('previewRate');
+    const previewTotal = document.getElementById('previewTotal');
+    
+    function calculateTotal() {
+        const days = parseFloat(daysInput.value) || 0;
+        const rate = parseFloat(rateInput.value) || 0;
+        const total = days * rate;
+        
+        previewDays.textContent = days;
+        previewRate.textContent = rate.toLocaleString('en-KE');
+        previewTotal.textContent = 'KSh ' + total.toLocaleString('en-KE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+    
+    daysInput.addEventListener('input', calculateTotal);
+    rateInput.addEventListener('input', calculateTotal);
+    
+    // Initial calculation
+    calculateTotal();
+});
+</script>
+{% endblock %}
+{% endblock %}

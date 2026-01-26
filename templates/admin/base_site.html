@@ -1,0 +1,14 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ title }} | Mookh Ticket System{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">
+        <img src="/static/images/mookh-logo.png" height="40px" alt="Mookh Logo" style="margin-right: 10px;">
+        Mookh Team Management System
+    </a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

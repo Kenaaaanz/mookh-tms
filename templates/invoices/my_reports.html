@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}My Reports{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mookh-text-primary">My Event Reports</h2>
+        <p class="text-muted">View and manage your submitted event reports</p>
+    </div>
+</div>
+
+{% if reports %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-text me-2"></i> Submitted Reports
+                        </h5>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" placeholder="Search reports..." id="searchReports">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="reportsTable">
+                        <thead>
+                            <tr>
+                                <th>Report #</th>
+                                <th>Event</th>
+                                <th>Submitted</th>
+                                <th>Hours</th>
+                                <th>Status</th>
+                                <th>Reviewed By</th>
+                                <th>Review Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in reports %}
+                            <tr>
+                                <td>
+                                    <strong>#{{ report.id }}</strong>
+                                </td>
+                                <td>
+                                    <a href="{% url 'event_detail' report.event_assignment.event.id %}" class="text-decoration-none">
+                                        {{ report.event_assignment.event.name|truncatechars:30 }}
+                                    </a>
+                                    <br>
+                                    <small class="text-muted">{{ report.event_assignment.event.location|truncatechars:20 }}</small>
+                                </td>
+                                <td>{{ report.submitted_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ report.attendance_hours }} hrs
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ report.status }}">
+                                        {{ report.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if report.reviewed_by %}
+                                    {{ report.reviewed_by.get_full_name|default:report.reviewed_by.username }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if report.reviewed_at %}
+                                    {{ report.reviewed_at|date:"M d, Y" }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'download_report' report.id %}" class="btn btn-sm btn-outline-primary" title="Download PDF">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                        <a href="{% url 'event_detail' report.event_assignment.event.id %}" class="btn btn-sm btn-outline-info" title="View Event">
+                                            <i class="bi bi-calendar-event"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Summary -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">Report Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4 mb-3">
+                        <div class="bg-primary text-white rounded-circle p-3 mx-auto" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+                            <h4 class="mb-0">{{ reports.count }}</h4>
+                        </div>
+                        <p class="mt-2 mb-0">Total Reports</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="bg-success text-white rounded-circle p-3 mx-auto" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+                            <h4 class="mb-0">{{ approved_count|default:"0" }}</h4>
+                        </div>
+                        <p class="mt-2 mb-0">Approved</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="bg-warning text-white rounded-circle p-3 mx-auto" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+                            <h4 class="mb-0">{{ pending_count|default:"0" }}</h4>
+                        </div>
+                        <p class="mt-2 mb-0">Pending</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">Report Guidelines</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Submit reports within 7 days after event completion</li>
+                    <li>Include detailed work summary and hours worked</li>
+                    <li>Report any challenges faced during the event</li>
+                    <li>Provide suggestions for improvement</li>
+                    <li>Reports are reviewed by administrators</li>
+                    <li>Download PDF copies for your records</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-file-text" style="font-size: 4rem; color: #ccc;"></i>
+                <h4 class="text-muted mt-3">No Reports Submitted</h4>
+                <p class="text-muted">You haven't submitted any event reports yet.</p>
+                
+                <div class="alert alert-info mx-auto" style="max-width: 500px;">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>How to Submit Reports:</strong>
+                    <ol class="mt-2 mb-0">
+                        <li>Go to "My Events" to view your assignments</li>
+                        <li>Select a completed event</li>
+                        <li>Click "Submit Report" button</li>
+                        <li>Fill in the report details and submit</li>
+                    </ol>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{% url 'my_events' %}" class="btn btn-mookh-primary">
+                        <i class="bi bi-calendar-event me-2"></i> View My Events
+                    </a>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary ms-2">
+                        <i class="bi bi-arrow-left me-2"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchReports');
+    const reportsTable = document.getElementById('reportsTable');
+    
+    if (searchInput && reportsTable) {
+        const rows = reportsTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        searchInput.addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            for (let row of rows) {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

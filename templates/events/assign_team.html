@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Assign Team - {{ event.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'event_list' %}">Events</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'event_detail' event.id %}">{{ event.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Assign Team</li>
+            </ol>
+        </nav>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-people me-2"></i> Assign Team Members
+                </h4>
+                <p class="mb-0 mt-2">{{ event.name }}</p>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Select Team Members</h5>
+                            {{ form.team_members|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Select Team Lead</h5>
+                            {{ form.team_lead|as_crispy_field }}
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                The team lead will be responsible for coordinating the team during the event.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-mookh-primary">
+                            <i class="bi bi-save me-2"></i> Save Assignments
+                        </button>
+                        <a href="{% url 'event_detail' event.id %}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Currently Assigned Team Members -->
+        {% if assigned_members %}
+        <div class="card mt-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Currently Assigned Team</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assigned_members %}
+                            <tr>
+                                <td>
+                                    {{ assignment.team_member.user.get_full_name }}
+                                    {% if assignment.is_team_lead %}
+                                    <span class="badge bg-warning text-dark ms-2">Team Lead</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ assignment.team_member.user.email }}</td>
+                                <td>{{ assignment.team_member.phone }}</td>
+                                <td>Team Member</td>
+                                <td>
+                                    {% if assignment.team_member.is_verified %}
+                                    <span class="badge bg-success">Verified</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Pending Verification</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

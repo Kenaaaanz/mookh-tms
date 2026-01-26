@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Login - Mookh Team Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow border-0 mt-5">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="mb-0">
+                        <img src="/static/images/mookh-logo.png" alt="Mookh Logo" height="40" class="me-2">
+                        Team Management System
+                    </h3>
+                    <p class="mb-0 mt-2">Team Member Login</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-mookh-primary btn-lg mt-3">
+                                <i class="bi bi-box-arrow-in-right me-2"></i> Login
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <hr>
+                        <p class="mb-2">New to Mookh?</p>
+                        <a href="{% url 'register' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-person-plus me-2"></i> Register as Team Member
+                        </a>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <hr>
+                        <p class="mb-0">
+                            <a href="#" class="text-decoration-none">Forgot password?</a> | 
+                            <a href="#" class="text-decoration-none">Contact Administrator</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-muted">System Features</h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <i class="bi bi-calendar-check text-primary"></i> Event Management
+                            </div>
+                            <div class="col-6">
+                                <i class="bi bi-receipt text-success"></i> Invoice Generation
+                            </div>
+                            <div class="col-6">
+                                <i class="bi bi-file-text text-warning"></i> Event Reports
+                            </div>
+                            <div class="col-6">
+                                <i class="bi bi-shield-check text-danger"></i> Admin Verification
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

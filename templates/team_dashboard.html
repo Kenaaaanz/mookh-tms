@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+{% block title %}Team Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mookh-text-primary">Welcome, {{ team_member.user.get_full_name }}</h2>
+        <p class="text-muted">Your dashboard for managing events, invoices, and reports.</p>
+    </div>
+</div>
+
+{% if not team_member.is_verified %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    Your account is pending verification. You won't be able to submit invoices or reports until your account is verified.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card border-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-subtitle mb-2 text-muted">My Events</h6>
+                        <h3 class="card-title">{{ total_events }}</h3>
+                    </div>
+                    <div class="bg-primary text-white rounded-circle p-3">
+                        <i class="bi bi-calendar-event" style="font-size: 1.5rem;"></i>
+                    </div>
+                </div>
+                <a href="{% url 'my_events' %}" class="btn btn-sm btn-mookh-primary mt-2">View All</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card border-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-subtitle mb-2 text-muted">Paid Invoices</h6>
+                        <h3 class="card-title">{{ completed_invoices }}</h3>
+                    </div>
+                    <div class="bg-success text-white rounded-circle p-3">
+                        <i class="bi bi-cash-coin" style="font-size: 1.5rem;"></i>
+                    </div>
+                </div>
+                <a href="{% url 'my_invoices' %}" class="btn btn-sm btn-success mt-2">View All</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card border-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-subtitle mb-2 text-muted">M-Pesa Number</h6>
+                        <h6 class="card-title">{{ team_member.mpesa_number|truncatechars:12 }}</h6>
+                    </div>
+                    <div class="bg-warning text-white rounded-circle p-3">
+                        <i class="bi bi-phone" style="font-size: 1.5rem;"></i>
+                    </div>
+                </div>
+                <a href="{% url 'profile' %}" class="btn btn-sm btn-warning mt-2">Update</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card border-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-subtitle mb-2 text-muted">Reports Pending</h6>
+                        <h3 class="card-title">{{ pending_reports }}</h3>
+                    </div>
+                    <div class="bg-info text-white rounded-circle p-3">
+                        <i class="bi bi-file-text" style="font-size: 1.5rem;"></i>
+                    </div>
+                </div>
+                <a href="{% url 'my_reports' %}" class="btn btn-sm btn-info mt-2">View All</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Upcoming Events -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Upcoming Events</h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming_events %}
+                <div class="list-group">
+                    {% for event in upcoming_events %}
+                    <a href="{% url 'event_detail' event.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ event.name }}</h6>
+                            <small class="text-muted">{{ event.start_date|date:"M d" }}</small>
+                        </div>
+                        <p class="mb-1 text-muted">{{ event.location|truncatechars:50 }}</p>
+                        <small>
+                            <span class="badge bg-{% if event.status == 'upcoming' %}primary{% elif event.status == 'ongoing' %}success{% else %}secondary{% endif %}">
+                                {{ event.get_status_display }}
+                            </span>
+                            {% for assignment in event.assignments.all %}
+                                {% if assignment.team_member.user == user %}
+                                    {% if assignment.is_team_lead %}
+                                        <span class="badge bg-warning text-dark">Team Lead</span>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </small>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-calendar-x" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-2">No upcoming events</p>
+                </div>
+                {% endif %}
+                <a href="{% url 'my_events' %}" class="btn btn-mookh-primary btn-sm mt-3">View All Events</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Invoices -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Recent Invoices</h5>
+            </div>
+            <div class="card-body">
+                {% if my_invoices %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Event</th>
+                                <th>Amount</th>
+                                <th>Payment Method</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in my_invoices %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'invoice_detail' invoice.id %}" class="text-decoration-none">
+                                        #{{ invoice.id }}
+                                    </a>
+                                </td>
+                                <td>{{ invoice.event_assignment.event.name|truncatechars:15 }}</td>
+                                <td>KSh {{ invoice.total_amount }}</td>
+                                <td>
+                                    <span class="badge bg-{% if invoice.payment_method == 'mpesa' %}success{% else %}secondary{% endif %}">
+                                        {{ invoice.get_payment_method_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ invoice.status }}">
+                                        {{ invoice.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-receipt" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-2">No invoices yet</p>
+                </div>
+                {% endif %}
+                <a href="{% url 'my_invoices' %}" class="btn btn-success btn-sm">View All Invoices</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Reports -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Recent Reports</h5>
+            </div>
+            <div class="card-body">
+                {% if my_reports %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Report #</th>
+                                <th>Event</th>
+                                <th>Submitted</th>
+                                <th>Hours</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in my_reports %}
+                            <tr>
+                                <td>#{{ report.id }}</td>
+                                <td>{{ report.event_assignment.event.name|truncatechars:20 }}</td>
+                                <td>{{ report.submitted_at|date:"M d, Y" }}</td>
+                                <td>{{ report.attendance_hours }} hrs</td>
+                                <td>
+                                    <span class="status-badge status-{{ report.status }}">
+                                        {{ report.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'download_report' report.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-download"></i> PDF
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-file-text" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-2">No reports submitted yet</p>
+                    {% if team_member.is_verified %}
+                    <a href="{% url 'my_events' %}" class="btn btn-warning btn-sm">
+                        <i class="bi bi-calendar-check me-2"></i> Go to Events to Submit Report
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+                <a href="{% url 'my_reports' %}" class="btn btn-warning btn-sm">View All Reports</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Quick Actions -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{% url 'my_events' %}" class="btn btn-primary w-100 d-flex flex-column align-items-center p-3">
+                            <i class="bi bi-calendar-week" style="font-size: 2rem;"></i>
+                            <span class="mt-2">My Events</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{% url 'my_invoices' %}" class="btn btn-success w-100 d-flex flex-column align-items-center p-3">
+                            <i class="bi bi-receipt" style="font-size: 2rem;"></i>
+                            <span class="mt-2">My Invoices</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{% url 'my_reports' %}" class="btn btn-warning w-100 d-flex flex-column align-items-center p-3">
+                            <i class="bi bi-file-text" style="font-size: 2rem;"></i>
+                            <span class="mt-2">My Reports</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{% url 'profile' %}" class="btn btn-dark w-100 d-flex flex-column align-items-center p-3">
+                            <i class="bi bi-person-circle" style="font-size: 2rem;"></i>
+                            <span class="mt-2">My Profile</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- M-Pesa Payment Info -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-wallet2 me-2"></i> M-Pesa Payment Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Your Payment Details:</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <strong>M-Pesa Number:</strong> {{ team_member.mpesa_number }}
+                            </li>
+                            <li class="mb-2">
+                                <strong>M-Pesa Name:</strong> {{ team_member.mpesa_name|default:"Not specified" }}
+                            </li>
+                            <li>
+                                <strong>Phone Number:</strong> {{ team_member.phone }}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Payment Process:</h6>
+                        <ol class="mb-0">
+                            <li>Submit invoices for completed events</li>
+                            <li>Admin verifies and approves invoices</li>
+                            <li>Payment sent via M-Pesa to your number</li>
+                            <li>Check M-Pesa messages for payment confirmations</li>
+                            <li>Contact admin if payment is delayed beyond 14 days</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Note:</strong> Daily rates are set per invoice when creating invoices for events. 
+                    Ensure your M-Pesa details are up-to-date in your profile for timely payments.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

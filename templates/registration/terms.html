@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Terms and Conditions - Mookh Ticket System{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-file-text me-2"></i>
+                        Mookh Ticket Validation System - Terms and Conditions
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="terms-content" style="max-height: 500px; overflow-y: auto; padding: 20px;">
+                        <h4>1. Team Member Agreement</h4>
+                        <p>By registering as a team member, you agree to:</p>
+                        <ul>
+                            <li>Provide accurate personal and contact information</li>
+                            <li>Use a valid M-Pesa registered phone number for payments</li>
+                            <li>Maintain professionalism during all events</li>
+                            <li>Submit accurate event reports and invoices</li>
+                            <li>Adhere to event schedules and requirements</li>
+                        </ul>
+                        
+                        <h4>2. Payment Terms</h4>
+                        <ul>
+                            <li>Payments are calculated based on daily rates per event</li>
+                            <li>Daily rates are determined per invoice, not in profile</li>
+                            <li>All payments are processed through M-Pesa</li>
+                            <li>Payment timeline: 2-3 days after invoice verification</li>
+                            <li>You are responsible for providing correct M-Pesa details</li>
+                        </ul>
+                        
+                        <h4>3. Event Participation</h4>
+                        <ul>
+                            <li>Event assignments are based on availability and skills</li>
+                            <li>Team leads are selected by administrators</li>
+                            <li>You must submit event reports within specified timelines</li>
+                            <li>Late or incomplete reports may affect future assignments</li>
+                        </ul>
+                        
+                        <h4>4. Data Privacy</h4>
+                        <p>Your personal information is protected and will only be used for:</p>
+                        <ul>
+                            <li>Event assignments and communication</li>
+                            <li>Payment processing through M-Pesa</li>
+                            <li>System administration and verification</li>
+                            <li>Legal and compliance requirements</li>
+                        </ul>
+                        
+                        <h4>5. Account Management</h4>
+                        <ul>
+                            <li>New accounts require admin verification</li>
+                            <li>You can update your profile information anytime</li>
+                            <li>Account suspension may occur for policy violations</li>
+                            <li>You can request account deletion by contacting admin</li>
+                        </ul>
+                        
+                        <div class="alert alert-warning mt-4">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Important:</strong> By registering, you acknowledge that you have read, 
+                            understood, and agree to these terms and conditions.
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{% url 'register' %}" class="btn btn-primary">
+                            <i class="bi bi-arrow-left me-2"></i> Back to Registration
+                        </a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-secondary ms-2">
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Back to Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
