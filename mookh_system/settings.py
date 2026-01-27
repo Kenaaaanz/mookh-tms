@@ -7,7 +7,7 @@ SECRET_KEY = 'li3w(460q8x2tt!@0u1%!ecdk#)3u&iqu1yjksl@3aarkjpk!v'
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['https://mookh-tms.onrender.com',
+ALLOWED_HOSTS = ['.onrender.com',
                  'localhost',]
 
 INSTALLED_APPS = [
