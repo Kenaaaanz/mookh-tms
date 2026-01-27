@@ -1,14 +1,661 @@
-{% extends "admin/base.html" %}
+<!DOCTYPE html>
+{% load i18n static jazzmin admin_urls %}
+<html lang="{{ LANGUAGE_CODE|default:"en-us" }}" {% if jazzmin_settings.dark_mode_theme %} data-bs-theme="dark" {% endif %}>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
 
-{% block title %}{{ title }} | Mookh Ticket System{% endblock %}
+    <title>{% block title %}{{ title }} | Mookh Ticket System{% endblock %}</title>
 
-{% block branding %}
-<h1 id="site-name">
-    <a href="{% url 'admin:index' %}">
-        <img src="/static/images/mookh-logo.png" height="40px" alt="Mookh Logo" style="margin-right: 10px;">
-        Mookh Team Management System
-    </a>
-</h1>
-{% endblock %}
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="{% static "vendor/fontawesome-free/css/all.min.css" %}">
 
-{% block nav-global %}{% endblock %}
+    <!-- Bootstrap and adminLTE -->
+    <link rel="stylesheet" href="{% static "vendor/adminlte/css/adminlte.min.css" %}">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+
+    <!-- Custom Mookh Styles -->
+    <style>
+        :root {
+            --mookh-primary: #1E3A8A;
+            --mookh-secondary: #3B82F6;
+            --mookh-accent: #10B981;
+            --mookh-light: #F8FAFC;
+            --mookh-dark: #1E293B;
+        }
+
+        /* Jazzmin Theme Customization */
+        .jazzmin .main-header {
+            background: linear-gradient(135deg, var(--mookh-primary) 0%, #1E40AF 100%);
+            border-bottom: none;
+        }
+
+        .jazzmin .main-sidebar {
+            background: linear-gradient(180deg, var(--mookh-primary) 0%, #1E40AF 100%);
+        }
+
+        .jazzmin .brand-link {
+            background: var(--mookh-primary) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .jazzmin .brand-link .brand-text {
+            font-weight: 600;
+            color: white !important;
+        }
+
+        .jazzmin .nav-sidebar > .nav-item > .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-left: 4px solid var(--mookh-accent);
+        }
+
+        .jazzmin .btn-primary {
+            background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+            border: none;
+        }
+
+        .jazzmin .btn-primary:hover {
+            background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
+            border: none;
+        }
+
+        .jazzmin .btn-success {
+            background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+            border: none;
+        }
+
+        .jazzmin .btn-warning {
+            background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+            border: none;
+        }
+
+        .jazzmin .btn-danger {
+            background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
+            border: none;
+        }
+
+        .jazzmin .btn-info {
+            background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+            border: none;
+        }
+
+        /* Custom Mookh Styles */
+        .mookh-bg-primary {
+            background-color: var(--mookh-primary) !important;
+        }
+
+        .mookh-bg-secondary {
+            background-color: var(--mookh-secondary) !important;
+        }
+
+        .mookh-text-primary {
+            color: var(--mookh-primary) !important;
+        }
+
+        .mookh-text-secondary {
+            color: var(--mookh-secondary) !important;
+        }
+
+        /* Card Styles */
+        .mookh-card {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .mookh-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .mookh-card-header {
+            background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            padding: 1.25rem 1.5rem;
+        }
+
+        .mookh-card-body {
+            padding: 1.5rem;
+            background: white;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 50rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-upcoming { background-color: #DBEAFE; color: #1E40AF; }
+        .status-ongoing { background-color: #FEF3C7; color: #92400E; }
+        .status-completed { background-color: #D1FAE5; color: #065F46; }
+        .status-cancelled { background-color: #FEE2E2; color: #991B1B; }
+        .status-draft { background-color: #F3F4F6; color: #374151; }
+        .status-submitted { background-color: #FEF3C7; color: #92400E; }
+        .status-verified { background-color: #D1FAE5; color: #065F46; }
+        .status-paid { background-color: #10B981; color: white; }
+        .status-pending { background-color: #FEF3C7; color: #92400E; }
+        .status-approved { background-color: #D1FAE5; color: #065F46; }
+        .status-rejected { background-color: #FEE2E2; color: #991B1B; }
+
+        /* Modern Table */
+        .mookh-table {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .mookh-table thead {
+            background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+            color: white;
+        }
+
+        .mookh-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .mookh-table tbody tr:hover {
+            background-color: rgba(30, 58, 138, 0.05);
+            transform: translateX(2px);
+        }
+
+        /* Custom Navbar */
+        .mookh-navbar {
+            background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Logo Container */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+        }
+
+        .logo-image {
+            height: 40px;
+            margin-right: 12px;
+            filter: brightness(0) invert(1);
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .logo-main {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .logo-sub {
+            font-size: 12px;
+            opacity: 0.8;
+            color: white;
+        }
+
+        /* Custom Footer */
+        .mookh-footer {
+            background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+            color: white;
+            padding: 1rem 0;
+            margin-top: 2rem;
+            border-radius: 12px 12px 0 0;
+        }
+
+        /* Quick Actions */
+        .quick-action-btn {
+            border-radius: 12px;
+            border: none;
+            padding: 1.5rem;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-decoration: none;
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .mookh-card-header {
+                padding: 1rem;
+            }
+            
+            .mookh-card-body {
+                padding: 1rem;
+            }
+            
+            .logo-main {
+                font-size: 16px;
+            }
+            
+            .logo-sub {
+                font-size: 11px;
+            }
+        }
+
+        /* Dark Mode Support */
+        [data-bs-theme="dark"] .mookh-card-body {
+            background: #1f2937;
+            color: #f3f4f6;
+        }
+
+        [data-bs-theme="dark"] .mookh-table tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+
+    {% block extrastyle %}{% endblock %}
+    {% block extrahead %}{% endblock %}
+</head>
+
+<body class="hold-transition jazzmin sidebar-mini {% if jazzmin_settings.dark_mode_theme %} dark-mode {% endif %} {% if jazzmin_settings.fixed_layout %} layout-fixed {% endif %} {% if jazzmin_settings.no_navbar_border %} border-top-0 {% endif %} {% block bodyclass %}{% endblock %}" id="{% block bodyid %}{% endblock %}">
+
+<div class="wrapper">
+
+    <!-- Navbar -->
+    <nav class="main-header navbar navbar-expand mookh-navbar">
+        <!-- Left navbar links -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" data-widget="pushmenu" href="#" role="button">
+                    <i class="fas fa-bars text-white"></i>
+                </a>
+            </li>
+            <li class="nav-item d-none d-sm-inline-block">
+                <a href="{% url 'dashboard' %}" class="nav-link text-white">
+                    <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item d-none d-sm-inline-block">
+                <a href="{% url 'event_list' %}" class="nav-link text-white">
+                    <i class="fas fa-calendar-alt mr-1"></i> Events
+                </a>
+            </li>
+        </ul>
+
+        <!-- Right navbar links -->
+        <ul class="navbar-nav ml-auto">
+            <!-- User Dropdown Menu -->
+            <li class="nav-item dropdown">
+                <a class="nav-link" data-toggle="dropdown" href="#">
+                    <div class="d-flex align-items-center">
+                        <div class="mr-2">
+                            <i class="fas fa-user-circle fa-lg text-white"></i>
+                        </div>
+                        <div class="text-white">
+                            <strong>{{ user.get_full_name|default:user.username }}</strong>
+                            <small class="d-block">Administrator</small>
+                        </div>
+                        <i class="fas fa-caret-down ml-2 text-white"></i>
+                    </div>
+                </a>
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                    <span class="dropdown-item dropdown-header">
+                        <i class="fas fa-user mr-2"></i> Account Settings
+                    </span>
+                    <div class="dropdown-divider"></div>
+                    {% if user.has_usable_password %}
+                    <a href="{% url 'admin:password_change' %}" class="dropdown-item">
+                        <i class="fas fa-key mr-2"></i> Change Password
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    {% endif %}
+                    <a href="{% url 'profile' %}" class="dropdown-item">
+                        <i class="fas fa-user-edit mr-2"></i> Edit Profile
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'dashboard' %}" class="dropdown-item">
+                        <i class="fas fa-tachometer-alt mr-2"></i> User Dashboard
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'logout' %}" class="dropdown-item">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                    </a>
+                </div>
+            </li>
+            
+            <!-- Notifications Dropdown -->
+            <li class="nav-item dropdown">
+                <a class="nav-link" data-toggle="dropdown" href="#">
+                    <i class="far fa-bell text-white"></i>
+                    {% if pending_invoices %}
+                    <span class="badge badge-danger navbar-badge">{{ pending_invoices|default:0 }}</span>
+                    {% endif %}
+                </a>
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                    <span class="dropdown-item dropdown-header">
+                        <i class="fas fa-bell mr-2"></i> {{ pending_invoices|default:0 }} Notifications
+                    </span>
+                    <div class="dropdown-divider"></div>
+                    {% if pending_invoices %}
+                    <a href="{% url 'admin:invoices_invoice_changelist' %}?status__exact=submitted" class="dropdown-item">
+                        <i class="fas fa-receipt mr-2 text-warning"></i> {{ pending_invoices }} Pending Invoices
+                        <span class="float-right text-muted text-sm">Verify now</span>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    {% endif %}
+                    <a href="{% url 'admin:invoices_eventreport_changelist' %}?status__exact=pending" class="dropdown-item">
+                        <i class="fas fa-file-alt mr-2 text-info"></i> {{ pending_reports|default:0 }} Pending Reports
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" class="dropdown-item dropdown-footer">
+                        <i class="fas fa-eye mr-1"></i> See All Notifications
+                    </a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+    <!-- /.navbar -->
+
+    <!-- Main Sidebar Container -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <!-- Brand Logo -->
+        <a href="{% url 'admin:index' %}" class="brand-link">
+            <div class="logo-container">
+                {% if 'static/images/mookh-logo.png' %}
+                <img src="{% static 'images/mookh-logo.png' %}" alt="Mookh Logo" class="logo-image">
+                {% else %}
+                <div class="bg-white rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; margin-right: 12px;">
+                    <span style="color: var(--mookh-primary); font-weight: bold; font-size: 18px;">M</span>
+                </div>
+                {% endif %}
+                <div class="logo-text">
+                    <div class="logo-main">Mookh Ticket</div>
+                    <div class="logo-sub">Admin System</div>
+                </div>
+            </div>
+        </a>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Sidebar user panel -->
+            <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                <div class="image">
+                    <i class="fas fa-user-circle fa-2x text-white"></i>
+                </div>
+                <div class="info">
+                    <a href="#" class="d-block text-white">{{ user.get_full_name|default:user.username }}</a>
+                    <small class="text-white-50">Administrator</small>
+                </div>
+            </div>
+
+            <!-- Sidebar Menu -->
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                    <!-- Dashboard -->
+                    <li class="nav-item">
+                        <a href="{% url 'admin:index' %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+                            <i class="nav-icon fas fa-tachometer-alt"></i>
+                            <p>Dashboard</p>
+                        </a>
+                    </li>
+
+                    <!-- Events -->
+                    <li class="nav-item">
+                        <a href="{% url 'admin:events_event_changelist' %}" class="nav-link">
+                            <i class="nav-icon fas fa-calendar-alt"></i>
+                            <p>Events</p>
+                        </a>
+                    </li>
+
+                    <!-- Team Management -->
+                    <li class="nav-item">
+                        <a href="{% url 'admin:teams_teammember_changelist' %}" class="nav-link">
+                            <i class="nav-icon fas fa-users"></i>
+                            <p>Team Members</p>
+                        </a>
+                    </li>
+
+                    <!-- Invoices -->
+                    <li class="nav-item">
+                        <a href="{% url 'admin:invoices_invoice_changelist' %}" class="nav-link">
+                            <i class="nav-icon fas fa-receipt"></i>
+                            <p>Invoices</p>
+                        </a>
+                    </li>
+
+                    <!-- Reports -->
+                    <li class="nav-item">
+                        <a href="{% url 'admin:invoices_eventreport_changelist' %}" class="nav-link">
+                            <i class="nav-icon fas fa-file-alt"></i>
+                            <p>Event Reports</p>
+                        </a>
+                    </li>
+
+                    <!-- Divider -->
+                    <li class="nav-header mt-3">QUICK ACTIONS</li>
+
+                    <!-- Create Event -->
+                    <li class="nav-item">
+                        <a href="{% url 'create_event' %}" class="nav-link">
+                            <i class="nav-icon fas fa-plus-circle text-success"></i>
+                            <p>Create New Event</p>
+                        </a>
+                    </li>
+
+                    <!-- User Dashboard -->
+                    <li class="nav-item">
+                        <a href="{% url 'dashboard' %}" class="nav-link">
+                            <i class="nav-icon fas fa-tachometer-alt text-primary"></i>
+                            <p>User Dashboard</p>
+                        </a>
+                    </li>
+
+                    <!-- Settings -->
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-cog"></i>
+                            <p>Settings</p>
+                        </a>
+                    </li>
+
+                    <!-- Divider -->
+                    <li class="nav-header mt-3">SYSTEM</li>
+
+                    <!-- Authentication -->
+                    <li class="nav-item">
+                        <a href="{% url 'admin:auth_user_changelist' %}" class="nav-link">
+                            <i class="nav-icon fas fa-user-lock"></i>
+                            <p>Users</p>
+                        </a>
+                    </li>
+
+                    <!-- Site Administration with dropdown -->
+                    <li class="nav-item has-treeview">
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-tools"></i>
+                            <p>
+                                Site Administration
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{% url 'admin:index' %}" class="nav-link">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Admin Home</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin:auth_user_changelist' %}" class="nav-link">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Users</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin:auth_group_changelist' %}" class="nav-link">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Groups</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin:events_event_changelist' %}" class="nav-link">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Events</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'admin:teams_teammember_changelist' %}" class="nav-link">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>Team Members</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+            <!-- /.sidebar-menu -->
+        </div>
+        <!-- /.sidebar -->
+    </aside>
+
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0 text-dark">
+                            {% block content_title %}{% if title %}{{ title }}{% endif %}{% endblock %}
+                        </h1>
+                    </div><!-- /.col -->
+                    <div class="col-sm-6">
+                        {% block breadcrumbs %}
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">Home</a></li>
+                            {% if title %}
+                            <li class="breadcrumb-item active">{{ title }}</li>
+                            {% endif %}
+                        </ol>
+                        {% endblock %}
+                    </div><!-- /.col -->
+                </div><!-- /.row -->
+            </div><!-- /.container-fluid -->
+        </div>
+        <!-- /.content-header -->
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                {% block messages %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endblock messages %}
+
+                {% block content %}
+                <!-- Default content -->
+                {% endblock %}
+            </div><!-- /.container-fluid -->
+        </section>
+        <!-- /.content -->
+    </div>
+    <!-- /.content-wrapper -->
+
+    <!-- Footer -->
+    <footer class="main-footer mookh-footer">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Mookh Ticket Validation System</strong> &copy; {% now "Y" %} 
+                    <span class="d-none d-sm-inline">- All rights reserved.</span>
+                </div>
+                <div class="col-md-6 text-right">
+                    <small>Version 1.0.0</small>
+                    <span class="mx-2">|</span>
+                    <small><i class="fas fa-heart text-danger"></i> Built with Django</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Control Sidebar -->
+    <aside class="control-sidebar control-sidebar-dark">
+        <!-- Control sidebar content goes here -->
+        <div class="p-3">
+            <h5>Quick Settings</h5>
+            <p>Sidebar settings and preferences</p>
+        </div>
+    </aside>
+    <!-- /.control-sidebar -->
+</div>
+<!-- ./wrapper -->
+
+<!-- REQUIRED SCRIPTS -->
+<!-- jQuery -->
+<script src="{% static "vendor/jquery/jquery.min.js" %}"></script>
+<!-- Bootstrap 4 -->
+<script src="{% static "vendor/bootstrap/js/bootstrap.bundle.min.js" %}"></script>
+<!-- AdminLTE App -->
+<script src="{% static "vendor/adminlte/js/adminlte.min.js" %}"></script>
+
+<!-- Custom JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add active class to current menu item
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.nav-sidebar .nav-link');
+    
+    navLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+            // Also activate parent if exists
+            const parent = link.closest('.nav-item.has-treeview');
+            if (parent) {
+                parent.classList.add('menu-open');
+            }
+        }
+    });
+    
+    // Notification bell animation
+    const notificationBell = document.querySelector('.fa-bell');
+    if (notificationBell && {{ pending_invoices|default:0 }} > 0) {
+        setInterval(() => {
+            notificationBell.classList.toggle('fa-shake');
+        }, 3000);
+    }
+    
+    // Smooth transitions
+    const cards = document.querySelectorAll('.mookh-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        });
+    });
+});
+</script>
+
+{% block extrajs %}{% endblock %}
+</body>
+</html>

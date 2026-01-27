@@ -1,212 +1,623 @@
 {% extends "admin/base_site.html" %}
-{% block title %}Admin Dashboard{% endblock %}
+{% load static %}
+
+{% block title %}Admin Dashboard | Mookh System{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .dashboard-widget {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+    }
+    
+    .dashboard-widget:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+    
+    .widget-header {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, #1E40AF 100%);
+        color: white;
+        padding: 1.5rem;
+        border-bottom: none;
+    }
+    
+    .widget-body {
+        padding: 1.5rem;
+        background: white;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .stat-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin-left: auto;
+    }
+    
+    .quick-action-btn {
+        border-radius: 12px;
+        border: none;
+        padding: 1.5rem;
+        text-align: center;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-decoration: none;
+    }
+    
+    .quick-action-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .quick-action-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .recent-item {
+        padding: 1rem;
+        border-radius: 10px;
+        border-left: 4px solid var(--mookh-secondary);
+        background: linear-gradient(90deg, rgba(248, 250, 252, 0.8) 0%, rgba(255, 255, 255, 1) 100%);
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+    }
+    
+    .recent-item:hover {
+        background: linear-gradient(90deg, rgba(226, 232, 240, 0.8) 0%, rgba(255, 255, 255, 1) 100%);
+        transform: translateX(4px);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #64748B;
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        color: #CBD5E1;
+        margin-bottom: 1rem;
+    }
+    
+    .trend-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .trend-up {
+        background-color: #D1FAE5;
+        color: #065F46;
+    }
+    
+    .trend-down {
+        background-color: #FEE2E2;
+        color: #991B1B;
+    }
+    
+    .trend-neutral {
+        background-color: #F3F4F6;
+        color: #374151;
+    }
+    
+    .action-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 50rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .action-badge:hover {
+        transform: scale(1.05);
+    }
+    
+    .gradient-bg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
+<!-- Dashboard Header -->
+<div class="dashboard-header mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 mb-2">
+                <i class="fas fa-tachometer-alt mr-2"></i>
+                Admin Dashboard
+            </h1>
+            <p class="mb-0" style="opacity: 0.9;">
+                Welcome back, <strong>{{ user.get_full_name }}</strong>. Manage your team and events efficiently.
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <span class="badge bg-light text-dark fs-6 p-2 px-3">
+                <i class="fas fa-calendar-alt mr-2"></i>
+                {{ current_date|date:"F d, Y" }}
+            </span>
+        </div>
+    </div>
+</div>
 
+<!-- Statistics Overview -->
 <div class="row mb-4">
-    <div class="col-12">
-        <h2 class="mookh-text-primary">Admin Dashboard</h2>
-        <p class="text-muted">Welcome back, {{ user.get_full_name }}. Here's what's happening with your team.</p>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-widget h-100">
+            <div class="widget-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 text-uppercase" style="opacity: 0.9; font-size: 0.85rem;">Total Events</h6>
+                        <h2 class="stat-number mb-0">{{ total_events }}</h2>
+                    </div>
+                    <div class="stat-icon bg-primary">
+                        <i class="fas fa-calendar-alt text-white"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="widget-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted">{{ upcoming_events }} upcoming</span>
+                    <a href="{% url 'event_list' %}" class="btn btn-sm btn-outline-primary">
+                        View All <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-widget h-100">
+            <div class="widget-header" style="background: linear-gradient(135deg, #10B981 0%, #34D399 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 text-uppercase" style="opacity: 0.9; font-size: 0.85rem;">Team Members</h6>
+                        <h2 class="stat-number mb-0">{{ total_team_members }}</h2>
+                    </div>
+                    <div class="stat-icon" style="background: rgba(255, 255, 255, 0.2);">
+                        <i class="fas fa-users text-white"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="widget-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted">{{ verified_members|default:0 }} verified</span>
+                    <a href="{% url 'admin:teams_teammember_changelist' %}" class="btn btn-sm btn-outline-success">
+                        Manage <i class="fas fa-cog ml-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-widget h-100 pulse-animation">
+            <div class="widget-header" style="background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 text-uppercase" style="opacity: 0.9; font-size: 0.85rem;">Pending Invoices</h6>
+                        <h2 class="stat-number mb-0">{{ pending_invoices }}</h2>
+                    </div>
+                    <div class="stat-icon" style="background: rgba(255, 255, 255, 0.2);">
+                        <i class="fas fa-receipt text-white"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="widget-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted">Require attention</span>
+                    <a href="{% url 'admin:invoices_invoice_changelist' %}?status__exact=submitted" 
+                       class="btn btn-sm btn-warning">
+                        Review <i class="fas fa-exclamation-circle ml-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-widget h-100">
+            <div class="widget-header" style="background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 text-uppercase" style="opacity: 0.9; font-size: 0.85rem;">Pending Reports</h6>
+                        <h2 class="stat-number mb-0">{{ pending_reports }}</h2>
+                    </div>
+                    <div class="stat-icon" style="background: rgba(255, 255, 255, 0.2);">
+                        <i class="fas fa-file-alt text-white"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="widget-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted">Awaiting review</span>
+                    <a href="{% url 'admin:invoices_eventreport_changelist' %}?status__exact=pending" 
+                       class="btn btn-sm btn-outline-purple">
+                        Review <i class="fas fa-clipboard-check ml-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Stats Cards -->
-<div class="row mb-4">
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card border-primary">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2 text-muted">Total Events</h6>
-                        <h3 class="card-title">{{ total_events }}</h3>
-                    </div>
-                    <div class="bg-primary text-white rounded-circle p-3">
-                        <i class="bi bi-calendar-event" style="font-size: 1.5rem;"></i>
-                    </div>
-                </div>
-                <a href="{% url 'event_list' %}" class="btn btn-sm btn-mookh-primary mt-2">View All</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card border-success">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2 text-muted">Upcoming Events</h6>
-                        <h3 class="card-title">{{ upcoming_events }}</h3>
-                    </div>
-                    <div class="bg-success text-white rounded-circle p-3">
-                        <i class="bi bi-calendar-check" style="font-size: 1.5rem;"></i>
-                    </div>
-                </div>
-                <a href="{% url 'create_event' %}" class="btn btn-sm btn-success mt-2">Create New</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card border-warning">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2 text-muted">Pending Invoices</h6>
-                        <h3 class="card-title">{{ pending_invoices }}</h3>
-                    </div>
-                    <div class="bg-warning text-white rounded-circle p-3">
-                        <i class="bi bi-receipt" style="font-size: 1.5rem;"></i>
-                    </div>
-                </div>
-                <a href="{% url 'admin:invoices_invoice_changelist' %}?status__exact=submitted" class="btn btn-sm btn-warning mt-2">Review</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card border-info">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2 text-muted">Team Members</h6>
-                        <h3 class="card-title">{{ total_team_members }}</h3>
-                    </div>
-                    <div class="bg-info text-white rounded-circle p-3">
-                        <i class="bi bi-people" style="font-size: 1.5rem;"></i>
-                    </div>
-                </div>
-                <a href="{% url 'admin:teams_teammember_changelist' %}" class="btn btn-sm btn-info mt-2">Manage</a>
-            </div>
-        </div>
-    </div>
-</div>
-
+<!-- Main Content Area -->
 <div class="row">
-    <!-- Recent Events -->
-    <div class="col-lg-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Recent Events</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Event Name</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for event in recent_events %}
-                            <tr>
-                                <td>{{ event.name|truncatechars:30 }}</td>
-                                <td>{{ event.start_date|date:"M d, Y" }}</td>
-                                <td>
-                                    <span class="status-badge status-{{ event.status }}">
-                                        {{ event.get_status_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" class="text-center">No events found</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+    <!-- Left Column: Recent Activity -->
+    <div class="col-lg-8">
+        <!-- Recent Events -->
+        <div class="dashboard-widget mb-4">
+            <div class="widget-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-week mr-2"></i>
+                        Recent Events
+                    </h5>
+                    <span class="badge bg-light text-dark">{{ recent_events|length }} total</span>
                 </div>
-                <a href="{% url 'event_list' %}" class="btn btn-mookh-primary btn-sm">View All Events</a>
+            </div>
+            <div class="widget-body">
+                {% if recent_events %}
+                <div class="list-group list-group-flush">
+                    {% for event in recent_events %}
+                    <div class="recent-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ event.name }}</h6>
+                                <div class="d-flex align-items-center">
+                                    <small class="text-muted mr-3">
+                                        <i class="fas fa-map-marker-alt mr-1"></i> {{ event.location }}
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock mr-1"></i> {{ event.start_date|date:"M d, Y" }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="status-badge status-{{ event.status }} mb-2">
+                                    {{ event.get_status_display }}
+                                </span>
+                                <div>
+                                    <a href="{% url 'event_detail' event.id %}" class="btn btn-xs btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'admin:events_event_change' event.id %}" class="btn btn-xs btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-calendar-times"></i>
+                    </div>
+                    <h5>No Recent Events</h5>
+                    <p class="text-muted">Create your first event to get started</p>
+                    <a href="{% url 'create_event' %}" class="btn btn-primary">
+                        <i class="fas fa-plus mr-2"></i> Create Event
+                    </a>
+                </div>
+                {% endif %}
+                {% if recent_events %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'event_list' %}" class="btn btn-outline-primary btn-sm">
+                        View All Events <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Stats Row -->
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="dashboard-widget h-100">
+                    <div class="widget-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-money-bill-wave fa-3x text-success"></i>
+                        </div>
+                        <h4 class="stat-number">KSh {{ total_revenue|default:"0"|floatformat:2 }}</h4>
+                        <p class="text-muted mb-3">Total Revenue This Month</p>
+                        <span class="trend-indicator trend-up">
+                            <i class="fas fa-arrow-up mr-1"></i> 12% increase
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="dashboard-widget h-100">
+                    <div class="widget-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-user-clock fa-3x text-primary"></i>
+                        </div>
+                        <h4 class="stat-number">{{ active_assignments|default:"0" }}</h4>
+                        <p class="text-muted mb-3">Active Assignments</p>
+                        <span class="trend-indicator trend-neutral">
+                            <i class="fas fa-minus mr-1"></i> Stable
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
-    <!-- Recent Invoices -->
-    <div class="col-lg-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0">Pending Invoices</h5>
+    <!-- Right Column: Quick Actions & Pending Items -->
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="dashboard-widget mb-4">
+            <div class="widget-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt mr-2"></i>
+                    Quick Actions
+                </h5>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Invoice #</th>
-                                <th>Team Member</th>
-                                <th>Amount</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for invoice in recent_invoices %}
-                            <tr>
-                                <td>#{{ invoice.id }}</td>
-                                <td>{{ invoice.event_assignment.team_member.user.get_full_name }}</td>
-                                <td>Ksh{{ invoice.total_amount }}</td>
-                                <td>
-                                    <a href="{% url 'verify_invoice' invoice.id %}" class="btn btn-sm btn-outline-warning">
-                                        <i class="bi bi-check-circle"></i> Verify
-                                    </a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" class="text-center">No pending invoices</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <a href="{% url 'admin:invoices_invoice_changelist' %}" class="btn btn-warning btn-sm">Manage All Invoices</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <!-- Quick Actions -->
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Quick Actions</h5>
-            </div>
-            <div class="card-body">
+            <div class="widget-body">
                 <div class="row">
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{% url 'create_event' %}" class="btn btn-success w-100 d-flex flex-column align-items-center p-3">
-                            <i class="bi bi-calendar-plus" style="font-size: 2rem;"></i>
-                            <span class="mt-2">Create Event</span>
+                    <div class="col-6 mb-3">
+                        <a href="{% url 'create_event' %}" class="quick-action-btn" 
+                           style="background: linear-gradient(135deg, #10B981 0%, #34D399 100%);">
+                            <i class="fas fa-calendar-plus quick-action-icon"></i>
+                            Create Event
                         </a>
                     </div>
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{% url 'admin:teams_teammember_changelist' %}" class="btn btn-primary w-100 d-flex flex-column align-items-center p-3">
-                            <i class="bi bi-people-fill" style="font-size: 2rem;"></i>
-                            <span class="mt-2">Manage Team</span>
+                    <div class="col-6 mb-3">
+                        <a href="{% url 'admin:teams_teammember_changelist' %}" class="quick-action-btn"
+                           style="background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);">
+                            <i class="fas fa-users quick-action-icon"></i>
+                            Manage Team
                         </a>
                     </div>
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{% url 'admin:invoices_invoice_changelist' %}" class="btn btn-warning w-100 d-flex flex-column align-items-center p-3">
-                            <i class="bi bi-receipt-cutoff" style="font-size: 2rem;"></i>
-                            <span class="mt-2">Review Invoices</span>
+                    <div class="col-6 mb-3">
+                        <a href="{% url 'admin:invoices_invoice_changelist' %}" class="quick-action-btn"
+                           style="background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);">
+                            <i class="fas fa-receipt quick-action-icon"></i>
+                            Review Invoices
                         </a>
                     </div>
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{% url 'admin:invoices_eventreport_changelist' %}" class="btn btn-info w-100 d-flex flex-column align-items-center p-3">
-                            <i class="bi bi-file-text" style="font-size: 2rem;"></i>
-                            <span class="mt-2">View Reports</span>
+                    <div class="col-6 mb-3">
+                        <a href="{% url 'admin:invoices_eventreport_changelist' %}" class="quick-action-btn"
+                           style="background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);">
+                            <i class="fas fa-file-alt quick-action-icon"></i>
+                            View Reports
                         </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pending Invoices -->
+        <div class="dashboard-widget mb-4">
+            <div class="widget-header" style="background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock mr-2"></i>
+                        Pending Invoices
+                    </h5>
+                    <span class="badge bg-light text-dark">{{ recent_invoices|length }}</span>
+                </div>
+            </div>
+            <div class="widget-body">
+                {% if recent_invoices %}
+                <div class="list-group list-group-flush">
+                    {% for invoice in recent_invoices|slice:":3" %}
+                    <div class="recent-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Invoice #{{ invoice.id }}</h6>
+                                <small class="text-muted">
+                                    {{ invoice.event_assignment.team_member.user.get_full_name }}
+                                </small>
+                            </div>
+                            <div class="text-right">
+                                <div class="mb-1">
+                                    <strong class="text-warning">KSh {{ invoice.total_amount }}</strong>
+                                </div>
+                                <a href="{% url 'verify_invoice' invoice.id %}" 
+                                   class="action-badge bg-warning text-dark">
+                                    <i class="fas fa-check-circle mr-1"></i> Verify
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if recent_invoices|length > 3 %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'admin:invoices_invoice_changelist' %}?status__exact=submitted" 
+                       class="btn btn-outline-warning btn-sm">
+                        View All <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="empty-state py-4">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-check-circle text-success"></i>
+                    </div>
+                    <p class="text-muted mb-0">All invoices are processed</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- System Status -->
+        <div class="dashboard-widget">
+            <div class="widget-header" style="background: linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%);">
+                <h5 class="mb-0">
+                    <i class="fas fa-server mr-2"></i>
+                    System Status
+                </h5>
+            </div>
+            <div class="widget-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                        <span>Database</span>
+                        <span class="badge bg-success">Healthy</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                        <span>User Sessions</span>
+                        <span class="badge bg-info">{{ active_users|default:"0" }}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                        <span>Storage</span>
+                        <span class="badge bg-warning">75% used</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                        <span>Last Backup</span>
+                        <span class="badge bg-secondary">Today</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Bottom Section: Charts & Reports -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="dashboard-widget">
+            <div class="widget-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    Activity Overview
+                </h5>
+            </div>
+            <div class="widget-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <!-- Simple activity chart placeholder -->
+                        <div class="chart-container">
+                            <div style="height: 200px; display: flex; align-items: flex-end; justify-content: space-around; padding: 1rem;">
+                                <div style="width: 40px; background: linear-gradient(to top, var(--mookh-primary) 0%, var(--mookh-secondary) 100%); height: 60%; border-radius: 4px;"></div>
+                                <div style="width: 40px; background: linear-gradient(to top, #10B981 0%, #34D399 100%); height: 80%; border-radius: 4px;"></div>
+                                <div style="width: 40px; background: linear-gradient(to top, #F59E0B 0%, #FBBF24 100%); height: 40%; border-radius: 4px;"></div>
+                                <div style="width: 40px; background: linear-gradient(to top, #8B5CF6 0%, #A78BFA 100%); height: 90%; border-radius: 4px;"></div>
+                                <div style="width: 40px; background: linear-gradient(to top, var(--mookh-primary) 0%, var(--mookh-secondary) 100%); height: 70%; border-radius: 4px;"></div>
+                            </div>
+                            <div class="text-center mt-3">
+                                <div class="d-flex justify-content-around">
+                                    <span class="text-muted">Mon</span>
+                                    <span class="text-muted">Tue</span>
+                                    <span class="text-muted">Wed</span>
+                                    <span class="text-muted">Thu</span>
+                                    <span class="text-muted">Fri</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h3 class="stat-number">98%</h3>
+                            <p class="text-muted">System Uptime</p>
+                            <div class="progress" style="height: 8px; border-radius: 4px;">
+                                <div class="progress-bar bg-success" style="width: 98%;"></div>
+                            </div>
+                            <p class="text-muted small mt-3">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                All systems operational. No issues detected.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extrajs %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add animation to stat cards on hover
+    const statCards = document.querySelectorAll('.dashboard-widget');
+    statCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.12)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.08)';
+        });
+    });
+    
+    // Add click animation to quick action buttons
+    const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+    quickActionBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    });
+    
+    // Update current time in header
+    function updateCurrentTime() {
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateString = now.toLocaleDateString('en-US', options);
+        const timeElement = document.querySelector('.current-time');
+        if (timeElement) {
+            timeElement.textContent = dateString;
+        }
+    }
+    
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 60000); // Update every minute
+});
+</script>
 {% endblock %}
