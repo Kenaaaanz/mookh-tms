@@ -23,7 +23,7 @@ def reverse_func(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         # Add your dependencies here
-        ('auth', '0002_remove_teammember_account_number_and_more'), 
+        ('teams', '0002_remove_teammember_account_number_and_more'), 
     ]
 
     operations = [
