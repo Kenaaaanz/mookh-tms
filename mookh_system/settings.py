@@ -80,7 +80,7 @@ WSGI_APPLICATION = 'mookh_system.wsgi.application'
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
-    Production - PostgreSQL on Render
+    #Production - PostgreSQL on Render
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
