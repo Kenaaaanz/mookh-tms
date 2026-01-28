@@ -42,20 +42,30 @@ def dashboard(request):
         total_events = Event.objects.count()
         upcoming_events = Event.objects.filter(status='upcoming').count()
         total_team_members = TeamMember.objects.count()
+        verified_members = TeamMember.objects.filter(is_verified=True).count()
         pending_invoices = Invoice.objects.filter(status='submitted').count()
         pending_reports = EventReport.objects.filter(status='pending').count()
+        completed_invoices = Invoice.objects.filter(status='paid').count()
         
         context.update({
             'total_events': total_events,
             'upcoming_events': upcoming_events,
             'total_team_members': total_team_members,
+            'verified_members': verified_members,
             'pending_invoices': pending_invoices,
             'pending_reports': pending_reports,
+            'completed_invoices': completed_invoices,
             'recent_events': Event.objects.order_by('-start_date')[:5],
             'recent_invoices': Invoice.objects.filter(status='submitted').order_by('-created_at')[:5],
             'recent_reports': EventReport.objects.filter(status='pending').order_by('-submitted_at')[:5],
+            'active_users': User.objects.filter(is_active=True).count(),
         })
-        template = 'admin_dashboard.html'
+        
+        # If accessing from admin, use admin dashboard template
+        if request.path.startswith('/admin/'):
+            return render(request, 'admin/index.html', context)
+        else:
+            return render(request, 'admin_dashboard.html', context)
     else:
         # Team member dashboard
         try:

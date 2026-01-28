@@ -65,31 +65,31 @@ WSGI_APPLICATION = 'mookh_system.wsgi.application'
     #}
 #}
 
-#DATABASES = {
-    #'default': {
-        #'ENGINE': 'django.db.backends.sqlite3',
-        #'NAME': BASE_DIR / 'db.sqlite3',
-        #"ENGINE": "django.db.backends.postgresql",
-        #"NAME": "mookh_tms",
-        #"USER": "postgres",
-        #"PASSWORD": "Ken@4427",
-        #"HOST": "localhost",
-        #"PORT": "5432",
-    #}
-#}
-
-DATABASE_URL = os.environ.get('DATABASE_URL')
-
-if DATABASE_URL:
-    #Production - PostgreSQL on Render
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
-            ssl_require=True  # Important for Render
-        )
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "mookh_tms",
+        "USER": "postgres",
+        "PASSWORD": "Ken@4427",
+        "HOST": "localhost",
+        "PORT": "5432",
     }
+}
+
+#DATABASE_URL = os.environ.get('DATABASE_URL')
+
+#if DATABASE_URL:
+    #Production - PostgreSQL on Render
+    #DATABASES = {
+        #'default': dj_database_url.config(
+            #default=DATABASE_URL,
+            #conn_max_age=600,
+            #conn_health_checks=True,
+            #ssl_require=True  # Important for Render
+        #)
+    #}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -146,3 +146,16 @@ if not DEBUG:
     WHITENOISE_USE_FINDERS = True
     WHITENOISE_MANIFEST_STRICT = False
     WHITENOISE_ALLOW_ALL_ORIGINS = True
+
+JAZZMIN_SETTINGS = {
+    
+    # Custom templates
+    "changeform_format": "horizontal_tabs",
+    "related_modal_active": True,
+    
+    # Custom dashboard
+    "custom_template": {
+        "admin/index.html": "admin/index.html",
+    },
+    
+}

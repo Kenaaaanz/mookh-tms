@@ -213,30 +213,6 @@
             border-radius: 12px 12px 0 0;
         }
 
-        /* Quick Actions */
-        .quick-action-btn {
-            border-radius: 12px;
-            border: none;
-            padding: 1.5rem;
-            text-align: center;
-            color: white;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            text-decoration: none;
-        }
-
-        .quick-action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-            color: white;
-            text-decoration: none;
-        }
-
         /* Responsive Adjustments */
         @media (max-width: 768px) {
             .mookh-card-header {
@@ -265,6 +241,16 @@
         [data-bs-theme="dark"] .mookh-table tbody tr:hover {
             background-color: rgba(255, 255, 255, 0.05);
         }
+
+        /* Fix for empty links */
+        a[href="#"], a[href=""] {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        a[href="#"]:hover, a[href=""]:hover {
+            text-decoration: none;
+        }
     </style>
 
     {% block extrastyle %}{% endblock %}
@@ -285,15 +271,17 @@
                 </a>
             </li>
             <li class="nav-item d-none d-sm-inline-block">
-                <a href="{% url 'dashboard' %}" class="nav-link text-white">
-                    <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
+                <a href="{% url 'admin:index' %}" class="nav-link text-white">
+                    <i class="fas fa-tachometer-alt mr-1"></i> Admin Dashboard
                 </a>
             </li>
+            {% if user.is_authenticated and not user.is_staff %}
             <li class="nav-item d-none d-sm-inline-block">
-                <a href="{% url 'event_list' %}" class="nav-link text-white">
-                    <i class="fas fa-calendar-alt mr-1"></i> Events
+                <a href="{% url 'dashboard' %}" class="nav-link text-white">
+                    <i class="fas fa-home mr-1"></i> User Dashboard
                 </a>
             </li>
+            {% endif %}
         </ul>
 
         <!-- Right navbar links -->
@@ -307,7 +295,13 @@
                         </div>
                         <div class="text-white">
                             <strong>{{ user.get_full_name|default:user.username }}</strong>
-                            <small class="d-block">Administrator</small>
+                            <small class="d-block">
+                                {% if user.is_staff %}
+                                Administrator
+                                {% else %}
+                                Team Member
+                                {% endif %}
+                            </small>
                         </div>
                         <i class="fas fa-caret-down ml-2 text-white"></i>
                     </div>
@@ -323,13 +317,18 @@
                     </a>
                     <div class="dropdown-divider"></div>
                     {% endif %}
+                    {% if user.is_staff %}
+                    <a href="{% url 'admin:index' %}" class="dropdown-item">
+                        <i class="fas fa-tachometer-alt mr-2"></i> Admin Panel
+                    </a>
+                    {% else %}
                     <a href="{% url 'profile' %}" class="dropdown-item">
                         <i class="fas fa-user-edit mr-2"></i> Edit Profile
                     </a>
-                    <div class="dropdown-divider"></div>
                     <a href="{% url 'dashboard' %}" class="dropdown-item">
-                        <i class="fas fa-tachometer-alt mr-2"></i> User Dashboard
+                        <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
                     </a>
+                    {% endif %}
                     <div class="dropdown-divider"></div>
                     <a href="{% url 'logout' %}" class="dropdown-item">
                         <i class="fas fa-sign-out-alt mr-2"></i> Logout
@@ -337,35 +336,37 @@
                 </div>
             </li>
             
-            <!-- Notifications Dropdown -->
+            <!-- Notifications Dropdown - Only show for staff -->
+            {% if user.is_staff %}
             <li class="nav-item dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#">
                     <i class="far fa-bell text-white"></i>
-                    {% if pending_invoices %}
-                    <span class="badge badge-danger navbar-badge">{{ pending_invoices|default:0 }}</span>
-                    {% endif %}
+                    {% with pending_count=0 %}
+                    {% comment %} 
+                    You can add logic here to calculate pending invoices/reports
+                    For now, we'll keep it simple 
+                    {% endcomment %}
+                    {% endwith %}
                 </a>
                 <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                     <span class="dropdown-item dropdown-header">
-                        <i class="fas fa-bell mr-2"></i> {{ pending_invoices|default:0 }} Notifications
+                        <i class="fas fa-bell mr-2"></i> Notifications
                     </span>
                     <div class="dropdown-divider"></div>
-                    {% if pending_invoices %}
                     <a href="{% url 'admin:invoices_invoice_changelist' %}?status__exact=submitted" class="dropdown-item">
-                        <i class="fas fa-receipt mr-2 text-warning"></i> {{ pending_invoices }} Pending Invoices
-                        <span class="float-right text-muted text-sm">Verify now</span>
+                        <i class="fas fa-receipt mr-2 text-warning"></i> Pending Invoices
                     </a>
                     <div class="dropdown-divider"></div>
-                    {% endif %}
                     <a href="{% url 'admin:invoices_eventreport_changelist' %}?status__exact=pending" class="dropdown-item">
-                        <i class="fas fa-file-alt mr-2 text-info"></i> {{ pending_reports|default:0 }} Pending Reports
+                        <i class="fas fa-file-alt mr-2 text-info"></i> Pending Reports
                     </a>
                     <div class="dropdown-divider"></div>
-                    <a href="#" class="dropdown-item dropdown-footer">
-                        <i class="fas fa-eye mr-1"></i> See All Notifications
+                    <a href="{% url 'admin:teams_teammember_changelist' %}?is_verified__exact=False" class="dropdown-item">
+                        <i class="fas fa-user-clock mr-2 text-primary"></i> Pending Verifications
                     </a>
                 </div>
             </li>
+            {% endif %}
         </ul>
     </nav>
     <!-- /.navbar -->
@@ -397,8 +398,14 @@
                     <i class="fas fa-user-circle fa-2x text-white"></i>
                 </div>
                 <div class="info">
-                    <a href="#" class="d-block text-white">{{ user.get_full_name|default:user.username }}</a>
-                    <small class="text-white-50">Administrator</small>
+                    <a href="{% url 'admin:index' %}" class="d-block text-white">{{ user.get_full_name|default:user.username }}</a>
+                    <small class="text-white-50">
+                        {% if user.is_staff %}
+                        Administrator
+                        {% else %}
+                        Team Member
+                        {% endif %}
+                    </small>
                 </div>
             </div>
 
@@ -409,7 +416,7 @@
                     <li class="nav-item">
                         <a href="{% url 'admin:index' %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
                             <i class="nav-icon fas fa-tachometer-alt"></i>
-                            <p>Dashboard</p>
+                            <p>Admin Dashboard</p>
                         </a>
                     </li>
 
@@ -448,57 +455,39 @@
                     <!-- Divider -->
                     <li class="nav-header mt-3">QUICK ACTIONS</li>
 
-                    <!-- Create Event -->
+                    <!-- Create Event - Only for staff -->
+                    {% if user.is_staff %}
                     <li class="nav-item">
-                        <a href="{% url 'create_event' %}" class="nav-link">
+                        <a href="{% url 'admin:events_event_add' %}" class="nav-link">
                             <i class="nav-icon fas fa-plus-circle text-success"></i>
                             <p>Create New Event</p>
                         </a>
                     </li>
+                    {% endif %}
 
-                    <!-- User Dashboard -->
+                    <!-- User Dashboard - For non-staff -->
+                    {% if not user.is_staff %}
                     <li class="nav-item">
                         <a href="{% url 'dashboard' %}" class="nav-link">
-                            <i class="nav-icon fas fa-tachometer-alt text-primary"></i>
+                            <i class="nav-icon fas fa-home text-primary"></i>
                             <p>User Dashboard</p>
                         </a>
                     </li>
-
-                    <!-- Settings -->
-                    <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-cog"></i>
-                            <p>Settings</p>
-                        </a>
-                    </li>
+                    {% endif %}
 
                     <!-- Divider -->
                     <li class="nav-header mt-3">SYSTEM</li>
 
                     <!-- Authentication -->
-                    <li class="nav-item">
-                        <a href="{% url 'admin:auth_user_changelist' %}" class="nav-link">
-                            <i class="nav-icon fas fa-user-lock"></i>
-                            <p>Users</p>
-                        </a>
-                    </li>
-
-                    <!-- Site Administration with dropdown -->
                     <li class="nav-item has-treeview">
                         <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-tools"></i>
+                            <i class="nav-icon fas fa-user-lock"></i>
                             <p>
-                                Site Administration
+                                Authentication
                                 <i class="right fas fa-angle-left"></i>
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{% url 'admin:index' %}" class="nav-link">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Admin Home</p>
-                                </a>
-                            </li>
                             <li class="nav-item">
                                 <a href="{% url 'admin:auth_user_changelist' %}" class="nav-link">
                                     <i class="far fa-circle nav-icon"></i>
@@ -511,19 +500,23 @@
                                     <p>Groups</p>
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a href="{% url 'admin:events_event_changelist' %}" class="nav-link">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Events</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{% url 'admin:teams_teammember_changelist' %}" class="nav-link">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Team Members</p>
-                                </a>
-                            </li>
                         </ul>
+                    </li>
+
+                    <!-- Site Administration -->
+                    <li class="nav-item">
+                        <a href="{% url 'admin:index' %}" class="nav-link">
+                            <i class="nav-icon fas fa-tools"></i>
+                            <p>Site Administration</p>
+                        </a>
+                    </li>
+
+                    <!-- Logout -->
+                    <li class="nav-item">
+                        <a href="{% url 'logout' %}" class="nav-link">
+                            <i class="nav-icon fas fa-sign-out-alt text-danger"></i>
+                            <p>Logout</p>
+                        </a>
                     </li>
                 </ul>
             </nav>
@@ -628,7 +621,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const navLinks = document.querySelectorAll('.nav-sidebar .nav-link');
     
     navLinks.forEach(link => {
-        if (link.getAttribute('href') === currentPath) {
+        if (link.getAttribute('href') && link.getAttribute('href') === currentPath) {
             link.classList.add('active');
             // Also activate parent if exists
             const parent = link.closest('.nav-item.has-treeview');
@@ -638,13 +631,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Notification bell animation
-    const notificationBell = document.querySelector('.fa-bell');
-    if (notificationBell && {{ pending_invoices|default:0 }} > 0) {
-        setInterval(() => {
-            notificationBell.classList.toggle('fa-shake');
-        }, 3000);
-    }
+    // Disable empty href links
+    const emptyLinks = document.querySelectorAll('a[href="#"], a[href=""]');
+    emptyLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            return false;
+        });
+    });
     
     // Smooth transitions
     const cards = document.querySelectorAll('.mookh-card');
