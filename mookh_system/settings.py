@@ -65,31 +65,31 @@ WSGI_APPLICATION = 'mookh_system.wsgi.application'
     #}
 #}
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "mookh_tms",
-        "USER": "postgres",
-        "PASSWORD": "Ken@4427",
-        "HOST": "localhost",
-        "PORT": "5432",
-    }
-}
-
-#DATABASE_URL = os.environ.get('DATABASE_URL')
-
-#if DATABASE_URL:
-    #Production - PostgreSQL on Render
-    #DATABASES = {
-        #'default': dj_database_url.config(
-            #default=DATABASE_URL,
-            #conn_max_age=600,
-            #conn_health_checks=True,
-            #ssl_require=True  # Important for Render
-        #)
+#DATABASES = {
+    #'default': {
+        #'ENGINE': 'django.db.backends.sqlite3',
+        #'NAME': BASE_DIR / 'db.sqlite3',
+        #"ENGINE": "django.db.backends.postgresql",
+        #"NAME": "mookh_tms",
+        #"USER": "postgres",
+        #"PASSWORD": "Ken@4427",
+        #"HOST": "localhost",
+        #"PORT": "5432",
     #}
+#}
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    #Production - PostgreSQL on Render
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True  # Important for Render
+        )
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
