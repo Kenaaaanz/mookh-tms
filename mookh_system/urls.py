@@ -14,6 +14,21 @@ admin.site.index_title = "Welcome to Mookh Team Management System"
 
 
 urlpatterns = [
+
+    # Event specific pages
+    path('admin/events/<int:event_id>/assignments/', event_views.event_assignments, name='event_assignments'),
+    path('admin/events/<int:event_id>/reports-invoices/', event_views.event_reports_invoices, name='event_reports_invoices'),
+    
+    # Team member specific pages
+    path('admin/teams/<int:member_id>/payment/', team_views.team_member_payment, name='team_member_payment'),
+    path('admin/teams/<int:member_id>/verification/', team_views.team_member_verification, name='team_member_verification'),
+    path('admin/teams/<int:member_id>/activity/', team_views.team_member_activity, name='team_member_activity'),
+    
+    # Invoice and report specific pages
+    path('admin/invoices/<int:invoice_id>/details/', invoice_views.invoice_admin_details, name='invoice_admin_details'),
+    path('admin/reports/<int:report_id>/details/', invoice_views.report_admin_details, name='report_admin_details'),
+
+
     path('admin/', admin.site.urls),
     path('', team_views.dashboard, name='dashboard'),
     path('register/', team_views.register, name='register'),
@@ -43,6 +58,20 @@ urlpatterns = [
 
     path('invoices/<int:invoice_id>/submit/', invoice_views.submit_invoice, name='submit_invoice'),
     path('invoices/<int:invoice_id>/', invoice_views.invoice_detail, name='invoice_detail'),
-
+    
+    # Reports - Public Views
+    path('reports/my/', invoice_views.my_reports, name='my_reports'),
+    path('reports/create/<int:assignment_id>/', invoice_views.create_report, name='create_report'),
+    path('reports/<int:report_id>/', invoice_views.report_detail_view, name='report_detail'),
+    path('reports/<int:report_id>/download/', invoice_views.download_report, name='download_report'),
+    
+    # Reports - Admin Review Views
+    path('reports/<int:report_id>/review/', invoice_views.review_report, name='review_report'),
+    path('reports/<int:report_id>/review/<str:action>/', invoice_views.review_report_action, name='review_report_action'),
+    
+    # Reports - AJAX Endpoints
+    path('api/reports/<int:report_id>/notes/', invoice_views.report_review_notes, name='report_review_notes'),
+    path('api/reports/<int:report_id>/timeline/', invoice_views.report_timeline, name='report_timeline'),
+    
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

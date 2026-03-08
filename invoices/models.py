@@ -43,7 +43,7 @@ class Invoice(models.Model):
     
     event_assignment = models.ForeignKey(EventAssignment, on_delete=models.CASCADE, related_name='invoices')
     number_of_days = models.PositiveIntegerField(validators=[MinValueValidator(1)], default=1)
-    daily_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    shift_rate = models.DecimalField(max_digits=10, decimal_places=2)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD, default='mpesa')
     mpesa_transaction_id = models.CharField(max_length=50, blank=True, null=True)
@@ -59,7 +59,7 @@ class Invoice(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     def save(self, *args, **kwargs):
-        self.total_amount = self.number_of_days * self.daily_rate
+        self.total_amount = self.number_of_days * self.shift_rate
         super().save(*args, **kwargs)
     
     def __str__(self):

@@ -66,16 +66,16 @@ WSGI_APPLICATION = 'mookh_system.wsgi.application'
 #}
 
 #DATABASES = {
-    #'default': {
-        #'ENGINE': 'django.db.backends.sqlite3',
-        #'NAME': BASE_DIR / 'db.sqlite3',
-        #"ENGINE": "django.db.backends.postgresql",
-        #"NAME": "mookh_tms",
-        #"USER": "postgres",
-        #"PASSWORD": "Ken@4427",
+ #   'default': {
+  #      'ENGINE': 'django.db.backends.sqlite3',
+   #     'NAME': BASE_DIR / 'db.sqlite3',
+    #    "ENGINE": "django.db.backends.postgresql",
+     #   "NAME": "mookh_tms",
+      #  "USER": "postgres",
+       # "PASSWORD": "Ken@4427",
         #"HOST": "localhost",
         #"PORT": "5432",
-    #}
+   # }
 #}
 
 DATABASE_URL = os.environ.get('DATABASE_URL')

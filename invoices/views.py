@@ -74,7 +74,7 @@ def create_invoice(request, assignment_id):
     else:
         initial_data = {
             'number_of_days': 1,
-            'daily_rate': assignment.team_member.daily_rate if assignment.team_member.daily_rate > 0 else 1000,
+            'shift_rate': assignment.team_member.shift_rate if assignment.team_member.shift_rate > 0 else 1000,
             'due_date': timezone.now().date() + timezone.timedelta(days=30),
             'payment_method': 'mpesa',
         }
@@ -228,3 +228,142 @@ def invoice_detail(request, invoice_id):
     return render(request, 'invoices/invoice_detail.html', {
         'invoice': invoice,
     })
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.admin.views.decorators import staff_member_required
+from .models import Invoice, EventReport
+
+@staff_member_required
+def invoice_admin_details(request, invoice_id):
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    
+    context = {
+        'invoice': invoice,
+        'title': f'Invoice #{invoice.id} Details',
+        'opts': invoice._meta,
+        'original': invoice,
+    }
+    return render(request, 'admin/invoices/invoice/details.html', context)
+
+@staff_member_required
+def report_admin_details(request, report_id):
+    report = get_object_or_404(EventReport, id=report_id)
+    
+    context = {
+        'report': report,
+        'title': f'Report #{report.id} Details',
+        'opts': report._meta,
+        'original': report,
+    }
+    return render(request, 'admin/invoices/report/details.html', context)
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
+from .models import Invoice, EventReport
+from events.models import EventAssignment
+from teams.models import TeamMember
+from .forms import InvoiceForm, EventReportForm, InvoiceVerificationForm, ReportReviewForm
+from .utils import generate_invoice_pdf, generate_report_pdf
+from django.db.models import Q
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def review_report_action(request, report_id, action):
+    """
+    Handle approve/reject actions for reports
+    """
+    report = get_object_or_404(EventReport, id=report_id)
+    
+    if action == 'approve':
+        report.status = 'approved'
+        report.reviewed_by = request.user
+        report.reviewed_at = timezone.now()
+        messages.success(request, f'Report #{report.id} has been approved successfully.')
+    elif action == 'reject':
+        report.status = 'rejected'
+        report.reviewed_by = request.user
+        report.reviewed_at = timezone.now()
+        messages.warning(request, f'Report #{report.id} has been rejected.')
+    else:
+        messages.error(request, 'Invalid action.')
+        return redirect('admin:invoices_eventreport_change', report_id)
+    
+    report.save()
+    return redirect(f'/admin/invoices/eventreport/{report.id}/change/#review-information-tab')
+
+
+@login_required
+def report_detail_view(request, report_id):
+    """
+    Public view for report details
+    """
+    report = get_object_or_404(EventReport, id=report_id)
+    
+    # Check authorization
+    if not (request.user.is_staff or report.event_assignment.team_member.user == request.user):
+        messages.error(request, 'You are not authorized to view this report.')
+        return redirect('dashboard')
+    
+    context = {
+        'report': report,
+        'event': report.event_assignment.event,
+        'team_member': report.event_assignment.team_member,
+        'is_team_lead': report.event_assignment.is_team_lead,
+    }
+    
+    return render(request, 'invoices/report_detail.html', context)
+
+
+@login_required
+def report_review_notes(request, report_id):
+    """
+    AJAX view to add review notes
+    """
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    if request.method == 'POST':
+        report = get_object_or_404(EventReport, id=report_id)
+        notes = request.POST.get('review_notes', '')
+        
+        report.review_notes = notes
+        report.save()
+        
+        return JsonResponse({
+            'success': True,
+            'notes': notes,
+            'reviewed_by': request.user.get_full_name(),
+            'reviewed_at': timezone.now().strftime('%B %d, %Y %H:%M')
+        })
+    
+    return JsonResponse({'error': 'Invalid method'}, status=405)
+
+
+@login_required
+def report_timeline(request, report_id):
+    """
+    AJAX view to get report timeline
+    """
+    report = get_object_or_404(EventReport, id=report_id)
+    
+    timeline = [
+        {
+            'date': report.submitted_at.isoformat(),
+            'action': 'submitted',
+            'description': 'Report submitted by team member',
+            'user': report.event_assignment.team_member.user.get_full_name()
+        }
+    ]
+    
+    if report.reviewed_at:
+        timeline.append({
+            'date': report.reviewed_at.isoformat(),
+            'action': report.status,
+            'description': f'Report {report.get_status_display().lower()} by admin',
+            'user': report.reviewed_by.get_full_name() if report.reviewed_by else 'System'
+        })
+    
+    return JsonResponse({'timeline': timeline})

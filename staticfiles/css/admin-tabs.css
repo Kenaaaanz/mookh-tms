@@ -1,0 +1,137 @@
+/* Admin Tab Navigation */
+.admin-tabs {
+    display: flex;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 20px;
+    padding: 0;
+    list-style: none;
+}
+
+.admin-tab {
+    padding: 12px 24px;
+    margin-right: 4px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-weight: 500;
+    color: #495057;
+    transition: all 0.2s ease;
+    position: relative;
+    top: 1px;
+}
+
+.admin-tab:hover {
+    background: #e9ecef;
+    color: var(--mookh-primary);
+}
+
+.admin-tab.active {
+    background: white;
+    border-bottom: 2px solid var(--mookh-primary);
+    color: var(--mookh-primary);
+}
+
+.admin-tab-content {
+    display: none;
+    padding: 20px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0 8px 8px 8px;
+}
+
+.admin-tab-content.active {
+    display: block;
+}
+
+/* Fieldset as tabs */
+fieldset.collapse {
+    margin-bottom: 20px;
+}
+
+fieldset.collapse h2 {
+    background: var(--mookh-primary);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 0;
+    font-size: 16px;
+}
+
+fieldset.collapse.collapsed .fieldset-content {
+    display: none;
+}
+
+/* Badge styling */
+.badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 50rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background-color: #D1FAE5;
+    color: #065F46;
+}
+
+.badge-warning {
+    background-color: #FEF3C7;
+    color: #92400E;
+}
+
+.badge-info {
+    background-color: #DBEAFE;
+    color: #1E40AF;
+}
+
+/* Payment information section */
+.payment-info {
+    background: linear-gradient(135deg, #f8fafc 0%, #e9ecef 100%);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+/* Verification section */
+.verification-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 50rem;
+    font-weight: 600;
+    margin: 10px 0;
+}
+
+.verification-badge.verified {
+    background-color: #D1FAE5;
+    color: #065F46;
+    border-left: 4px solid #10B981;
+}
+
+.verification-badge.pending {
+    background-color: #FEF3C7;
+    color: #92400E;
+    border-left: 4px solid #F59E0B;
+}
+
+/* Help text styling */
+.help {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .admin-tab {
+        flex: 1 1 auto;
+        margin-bottom: 5px;
+    }
+}

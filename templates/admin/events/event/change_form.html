@@ -1,0 +1,479 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}{{ title }} | Event Management{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+<style>
+    :root {
+        --mookh-primary: #1E3A8A;
+        --mookh-secondary: #3B82F6;
+        --mookh-accent: #10B981;
+        --mookh-light: #F8FAFC;
+        --mookh-dark: #1E293B;
+    }
+
+    /* Dashboard-style header */
+    .event-header {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Tab navigation */
+    .admin-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .admin-tab {
+        flex: 1;
+        padding: 1rem;
+        text-align: center;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #64748B;
+        transition: all 0.3s ease;
+        background: transparent;
+        border: none;
+        text-decoration: none;
+        display: block;
+    }
+
+    .admin-tab:hover {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        color: var(--mookh-primary);
+        transform: translateY(-2px);
+        text-decoration: none;
+    }
+
+    .admin-tab.active {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+        box-shadow: 0 4px 10px rgba(30, 58, 138, 0.3);
+    }
+
+    .admin-tab i {
+        margin-right: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    /* Tab content cards */
+    .tab-content-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .tab-content-card:hover {
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .tab-content-card h2 {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    /* Field styling */
+    .form-row {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .form-row:hover {
+        background: #f1f5f9;
+        transform: translateX(2px);
+    }
+
+    label {
+        font-weight: 600;
+        color: var(--mookh-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    input, textarea, select {
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 0.75rem;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+
+    input:focus, textarea:focus, select:focus {
+        border-color: var(--mookh-secondary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    /* Team assignments table */
+    .assignments-table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        margin-top: 1rem;
+    }
+
+    .assignments-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .assignments-table th {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+        padding: 1rem;
+        font-weight: 500;
+    }
+
+    .assignments-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .assignments-table tr:hover {
+        background: #f8fafc;
+    }
+
+    /* Status badges */
+    .status-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 50rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .status-upcoming { background-color: #DBEAFE; color: #1E40AF; }
+    .status-ongoing { background-color: #FEF3C7; color: #92400E; }
+    .status-completed { background-color: #D1FAE5; color: #065F46; }
+    .status-cancelled { background-color: #FEE2E2; color: #991B1B; }
+    .status-pending { background-color: #FEF3C7; color: #92400E; }
+    .status-approved { background-color: #D1FAE5; color: #065F46; }
+    .status-rejected { background-color: #FEE2E2; color: #991B1B; }
+    .status-draft { background-color: #F3F4F6; color: #374151; }
+    .status-submitted { background-color: #FEF3C7; color: #92400E; }
+    .status-verified { background-color: #D1FAE5; color: #065F46; }
+    .status-paid { background-color: #10B981; color: white; }
+
+    /* Action buttons */
+    .action-button {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .action-button-primary {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+    }
+
+    .action-button-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    .action-button-success {
+        background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+        color: white;
+    }
+
+    .action-button-success:hover {
+        color: white;
+        text-decoration: none;
+    }
+
+    .action-button-warning {
+        background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+        color: white;
+    }
+
+    .action-button-warning:hover {
+        color: white;
+        text-decoration: none;
+    }
+
+    .action-button-info {
+        background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+        color: white;
+    }
+
+    .action-button-info:hover {
+        color: white;
+        text-decoration: none;
+    }
+
+    .action-button-sm {
+        padding: 0.35rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    /* Quick stats cards */
+    .quick-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .stat-mini-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-mini-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-mini-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+    }
+
+    .stat-mini-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .stat-mini-label {
+        color: #64748B;
+        font-size: 0.875rem;
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #64748B;
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+        color: #CBD5E1;
+        margin-bottom: 1rem;
+    }
+
+    /* Add assignment form */
+    .add-assignment-form {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    /* Navigation info */
+    .nav-info {
+        font-size: 0.875rem;
+        color: #64748B;
+        margin-top: 0.5rem;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Event Header -->
+<div class="event-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 mb-2">
+                <i class="fas {% if original %}fa-edit{% else %}fa-plus-circle{% endif %} mr-2"></i>
+                {% if original %}Edit Event{% else %}Create New Event{% endif %}
+            </h1>
+            <p class="mb-0" style="opacity: 0.9;">
+                {% if original %}
+                Managing event: <strong>{{ original.name }}</strong>
+                {% else %}
+                Create a new event and assign team members
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <span class="badge bg-light text-dark fs-6 p-2 px-3">
+                <i class="fas fa-calendar-alt mr-2"></i>
+                {% now "F d, Y" %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Navigation - Now with proper links -->
+<div class="admin-tabs">
+    <a href="{% if original %}{% url 'admin:events_event_change' original.id %}{% else %}#{% endif %}" 
+       class="admin-tab {% if not request.GET.tab or request.GET.tab == 'info' %}active{% endif %}"
+       data-tab="info">
+        <i class="fas fa-info-circle"></i>
+        <span class="d-none d-md-inline">Event Information</span>
+    </a>
+    
+    {% if original %}
+    <a href="{% url 'event_assignments' original.id %}" 
+       class="admin-tab {% if request.GET.tab == 'assignments' %}active{% endif %}">
+        <i class="fas fa-users"></i>
+        <span class="d-none d-md-inline">Team Assignments</span>
+    </a>
+    
+    <a href="{% url 'event_reports_invoices' original.id %}" 
+       class="admin-tab {% if request.GET.tab == 'reports' %}active{% endif %}">
+        <i class="fas fa-file-alt"></i>
+        <span class="d-none d-md-inline">Reports & Invoices</span>
+    </a>
+    {% else %}
+    <span class="admin-tab" style="opacity: 0.5; cursor: not-allowed;">
+        <i class="fas fa-users"></i>
+        <span class="d-none d-md-inline">Team Assignments</span>
+    </span>
+    <span class="admin-tab" style="opacity: 0.5; cursor: not-allowed;">
+        <i class="fas fa-file-alt"></i>
+        <span class="d-none d-md-inline">Reports & Invoices</span>
+    </span>
+    {% endif %}
+</div>
+
+<!-- Main Form Content -->
+<div id="event-info" class="tab-content active">
+    <div class="tab-content-card">
+        <h2>
+            <i class="fas fa-info-circle mr-2"></i>
+            Event Details
+        </h2>
+        
+        {% block field_sets %}
+        {% for fieldset in adminform %}
+            {% include "admin/includes/fieldset.html" %}
+        {% endfor %}
+        {% endblock %}
+    </div>
+</div>
+
+<!-- Quick Stats (if original exists) -->
+{% if original %}
+<div class="quick-stats-grid">
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-mini-number">{{ original.assignments.count }}</div>
+        <div class="stat-mini-label">Team Members</div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #10B981 0%, #34D399 100%);">
+            <i class="fas fa-file-alt"></i>
+        </div>
+        <div class="stat-mini-number">{{ reports_count|default:"0" }}</div>
+        <div class="stat-mini-label">Reports Submitted</div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);">
+            <i class="fas fa-receipt"></i>
+        </div>
+        <div class="stat-mini-number">{{ invoices_count|default:"0" }}</div>
+        <div class="stat-mini-label">Invoices Created</div>
+    </div>
+</div>
+
+<!-- Navigation Info -->
+<div class="nav-info">
+    <i class="fas fa-info-circle mr-1"></i>
+    Click on the tabs above to manage team assignments and view reports & invoices for this event.
+</div>
+{% endif %}
+
+<!-- Action Buttons -->
+<div class="submit-row mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            {% if original %}
+            <a href="{% url 'admin:events_eventassignment_changelist' %}?event__id__exact={{ original.id }}" 
+               class="action-button action-button-info">
+                <i class="fas fa-users mr-2"></i> Manage All Assignments
+            </a>
+            <a href="{% url 'event_detail' original.id %}" class="action-button action-button-success ml-2">
+                <i class="fas fa-eye mr-2"></i> View Event Page
+            </a>
+            {% endif %}
+        </div>
+        <div>
+            <button type="submit" name="_save" class="action-button action-button-primary">
+                <i class="fas fa-save mr-2"></i> Save Event
+            </button>
+            <a href="{% url 'admin:events_event_changelist' %}" class="btn btn-outline-secondary ml-2">
+                <i class="fas fa-times mr-2"></i> Cancel
+            </a>
+        </div>
+    </div>
+</div>
+
+{% block after_field_sets %}{% endblock %}
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add animation to form rows
+    const formRows = document.querySelectorAll('.form-row');
+    formRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(2px)';
+            this.style.backgroundColor = '#f1f5f9';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateX(0)';
+            this.style.backgroundColor = '#f8fafc';
+        });
+    });
+});
+</script>
+{% endblock %}

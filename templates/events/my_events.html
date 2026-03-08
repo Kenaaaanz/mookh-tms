@@ -46,7 +46,8 @@
                         </thead>
                         <tbody>
                             {% for event in events %}
-                            {% with assignment=event.assignments.all|first %}
+                            {# Get the user's specific assignment for this event #}
+                            {% with user_assignment=event.user_assignments %}
                             <tr>
                                 <td>
                                     <strong>{{ event.name }}</strong>
@@ -65,7 +66,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    {% if assignment.is_team_lead %}
+                                    {% if user_assignment and user_assignment.is_team_lead %}
                                     <span class="badge bg-warning text-dark">
                                         <i class="bi bi-star-fill me-1"></i> Team Lead
                                     </span>
@@ -76,33 +77,37 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if assignment.report %}
-                                    <span class="badge bg-{{ assignment.report.status|yesno:'success,warning,danger' }}">
-                                        {{ assignment.report.get_status_display }}
+                                    {% if user_assignment and user_assignment.report %}
+                                    <span class="badge bg-{{ user_assignment.report.status|yesno:'success,warning,danger' }}">
+                                        {{ user_assignment.report.get_status_display }}
                                     </span>
+                                    {% elif user_assignment %}
+                                        {% if event.status == 'completed' or event.status == 'ongoing' %}
+                                        <a href="{% url 'create_report' user_assignment.id %}" class="btn btn-sm btn-warning">
+                                            <i class="bi bi-plus-circle me-1"></i> Create Report
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">Not available</span>
+                                        {% endif %}
                                     {% else %}
-                                    {% if event.status == 'completed' or event.status == 'ongoing' %}
-                                    <a href="{% url 'create_report' assignment.id %}" class="btn btn-sm btn-warning">
-                                        <i class="bi bi-plus-circle me-1"></i> Create
-                                    </a>
-                                    {% else %}
-                                    <span class="text-muted">Not available</span>
-                                    {% endif %}
+                                    <span class="text-muted">No assignment</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if assignment.invoices.exists %}
-                                    <span class="badge bg-{{ assignment.invoices.first.status|yesno:'success,info,warning' }}">
-                                        {{ assignment.invoices.first.get_status_display }}
+                                    {% if user_assignment and user_assignment.invoices.exists %}
+                                    <span class="badge bg-{{ user_assignment.invoices.first.status|yesno:'success,info,warning' }}">
+                                        {{ user_assignment.invoices.first.get_status_display }}
                                     </span>
+                                    {% elif user_assignment %}
+                                        {% if event.status == 'completed' or event.status == 'ongoing' %}
+                                        <a href="{% url 'create_invoice' user_assignment.id %}" class="btn btn-sm btn-success">
+                                            <i class="bi bi-plus-circle me-1"></i> Create Invoice
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">Not available</span>
+                                        {% endif %}
                                     {% else %}
-                                    {% if event.status == 'completed' or event.status == 'ongoing' %}
-                                    <a href="{% url 'create_invoice' assignment.id %}" class="btn btn-sm btn-success">
-                                        <i class="bi bi-plus-circle me-1"></i> Create
-                                    </a>
-                                    {% else %}
-                                    <span class="text-muted">Not available</span>
-                                    {% endif %}
+                                    <span class="text-muted">No assignment</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -110,13 +115,13 @@
                                         <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-primary" title="View Details">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        {% if not assignment.report and event.status == 'completed' %}
-                                        <a href="{% url 'create_report' assignment.id %}" class="btn btn-sm btn-outline-warning" title="Submit Report">
+                                        {% if user_assignment and not user_assignment.report and event.status == 'completed' %}
+                                        <a href="{% url 'create_report' user_assignment.id %}" class="btn btn-sm btn-outline-warning" title="Submit Report">
                                             <i class="bi bi-file-text"></i>
                                         </a>
                                         {% endif %}
-                                        {% if not assignment.invoices.exists and event.status == 'completed' %}
-                                        <a href="{% url 'create_invoice' assignment.id %}" class="btn btn-sm btn-outline-success" title="Create Invoice">
+                                        {% if user_assignment and not user_assignment.invoices.exists and event.status == 'completed' %}
+                                        <a href="{% url 'create_invoice' user_assignment.id %}" class="btn btn-sm btn-outline-success" title="Create Invoice">
                                             <i class="bi bi-receipt"></i>
                                         </a>
                                         {% endif %}
@@ -148,37 +153,15 @@
                     </li>
                     <li class="mb-2 d-flex justify-content-between">
                         <span>Upcoming:</span>
-                        <span class="badge bg-primary">
-                            {% with upcoming_count=events|dictsortreversed:"status" %}
-                                {% for event in events %}
-                                    {% if event.status == 'upcoming' %}
-                                        {{ forloop.counter }}
-                                    {% endif %}
-                                {% endfor %}
-                            {% endwith %}
-                        </span>
+                        <span class="badge bg-primary">{{ upcoming_count }}</span>
                     </li>
                     <li class="mb-2 d-flex justify-content-between">
                         <span>Ongoing:</span>
-                        <span class="badge bg-warning">
-                            {% with ongoing_count=0 %}
-                                {% for event in events %}
-                                    {% if event.status == 'ongoing' %}
-                                        {{ forloop.counter }}
-                                    {% endif %}
-                                {% endfor %}
-                            {% endwith %}
-                        </span>
+                        <span class="badge bg-warning">{{ ongoing_count }}</span>
                     </li>
                     <li class="d-flex justify-content-between">
                         <span>Completed:</span>
-                        <span class="badge bg-success">
-                            {% for event in events %}
-                                {% if event.status == 'completed' %}
-                                    {{ forloop.counter }}
-                                {% endif %}
-                            {% endfor %}
-                        </span>
+                        <span class="badge bg-success">{{ completed_count }}</span>
                     </li>
                 </ul>
             </div>

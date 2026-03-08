@@ -139,3 +139,62 @@ def custom_logout(request):
     
     # Render logout confirmation page
     return render(request, 'registration/logout.html')
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.admin.views.decorators import staff_member_required
+from .models import TeamMember
+from events.models import EventAssignment
+from invoices.models import Invoice, EventReport
+
+@staff_member_required
+def team_member_payment(request, member_id):
+    team_member = get_object_or_404(TeamMember, id=member_id)
+    
+    context = {
+        'team_member': team_member,
+        'title': f'Payment Information - {team_member.user.get_full_name()}',
+        'opts': team_member._meta,
+        'original': team_member,
+    }
+    return render(request, 'admin/teams/teammember/payment.html', context)
+
+@staff_member_required
+def team_member_verification(request, member_id):
+    team_member = get_object_or_404(TeamMember, id=member_id)
+    
+    # Get statistics
+    events_count = EventAssignment.objects.filter(team_member=team_member).count()
+    reports_count = EventReport.objects.filter(event_assignment__team_member=team_member).count()
+    invoices_count = Invoice.objects.filter(event_assignment__team_member=team_member).count()
+    recent_events = EventAssignment.objects.filter(team_member=team_member).select_related('event')[:5]
+    
+    context = {
+        'team_member': team_member,
+        'events_count': events_count,
+        'reports_count': reports_count,
+        'invoices_count': invoices_count,
+        'recent_events': recent_events,
+        'title': f'Verification Status - {team_member.user.get_full_name()}',
+        'opts': team_member._meta,
+        'original': team_member,
+    }
+    return render(request, 'admin/teams/teammember/verification.html', context)
+
+@staff_member_required
+def team_member_activity(request, member_id):
+    team_member = get_object_or_404(TeamMember, id=member_id)
+    
+    assignments = EventAssignment.objects.filter(team_member=team_member).select_related('event')
+    reports = EventReport.objects.filter(event_assignment__team_member=team_member).select_related('event_assignment__event')
+    invoices = Invoice.objects.filter(event_assignment__team_member=team_member).select_related('event_assignment__event')
+    
+    context = {
+        'team_member': team_member,
+        'assignments': assignments,
+        'reports': reports,
+        'invoices': invoices,
+        'title': f'Activity Log - {team_member.user.get_full_name()}',
+        'opts': team_member._meta,
+        'original': team_member,
+    }
+    return render(request, 'admin/teams/teammember/activity.html', context)

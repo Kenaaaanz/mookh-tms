@@ -8,7 +8,7 @@ class TeamMember(models.Model):
     phone = models.CharField(max_length=15, unique=True)  # M-Pesa phone number
     id_number = models.CharField(max_length=20, blank=True, null=True)  # National ID
     address = models.TextField()
-    daily_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    shift_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     mpesa_number = models.CharField(max_length=15, default="")  # M-Pesa phone for payments
     mpesa_name = models.CharField(max_length=100, blank=True)  # Name as registered in M-Pesa
     is_verified = models.BooleanField(default=False)

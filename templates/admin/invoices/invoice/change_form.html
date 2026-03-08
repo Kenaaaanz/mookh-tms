@@ -1,0 +1,618 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}{{ title }} | Invoice Management{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+<style>
+    :root {
+        --mookh-primary: #1E3A8A;
+        --mookh-secondary: #3B82F6;
+        --mookh-accent: #10B981;
+        --mookh-light: #F8FAFC;
+        --mookh-dark: #1E293B;
+    }
+
+    /* Dashboard-style header */
+    .invoice-header {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Tab navigation */
+    .admin-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .admin-tab {
+        flex: 1;
+        padding: 1rem;
+        text-align: center;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #64748B;
+        transition: all 0.3s ease;
+        background: transparent;
+        border: none;
+    }
+
+    .admin-tab:hover {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        color: var(--mookh-primary);
+        transform: translateY(-2px);
+    }
+
+    .admin-tab.active {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+        box-shadow: 0 4px 10px rgba(30, 58, 138, 0.3);
+    }
+
+    .admin-tab i {
+        margin-right: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    /* Tab content cards */
+    .tab-content-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .tab-content-card:hover {
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .tab-content-card h2 {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    /* Field styling */
+    .form-row {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .form-row:hover {
+        background: #f1f5f9;
+        transform: translateX(2px);
+    }
+
+    label {
+        font-weight: 600;
+        color: var(--mookh-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    input, textarea, select {
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 0.75rem;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+
+    input:focus, textarea:focus, select:focus {
+        border-color: var(--mookh-secondary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    /* Status badges */
+    .status-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 50rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .status-draft { background-color: #F3F4F6; color: #374151; }
+    .status-submitted { background-color: #FEF3C7; color: #92400E; }
+    .status-verified { background-color: #D1FAE5; color: #065F46; }
+    .status-paid { background-color: #10B981; color: white; }
+    .status-rejected { background-color: #FEE2E2; color: #991B1B; }
+
+    /* M-Pesa Info Card */
+    .mpesa-info-card {
+        background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: white;
+        margin-top: 1.5rem;
+    }
+
+    .mpesa-detail {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .mpesa-detail strong {
+        display: block;
+        font-size: 0.875rem;
+        opacity: 0.8;
+        margin-bottom: 0.25rem;
+    }
+
+    .mpesa-detail span {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    /* Action buttons */
+    .action-button {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .action-button-primary {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+    }
+
+    .action-button-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    .action-button-success {
+        background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+        color: white;
+    }
+
+    .action-button-warning {
+        background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+        color: white;
+    }
+
+    .action-button-info {
+        background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+        color: white;
+    }
+
+    .action-button-danger {
+        background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
+        color: white;
+    }
+
+    /* Amount display */
+    .amount-display {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Timeline */
+    .timeline {
+        position: relative;
+        padding: 1rem 0;
+    }
+
+    .timeline-item {
+        display: flex;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    .timeline-marker {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        margin-right: 1rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .timeline-item.completed .timeline-marker {
+        background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+    }
+
+    .timeline-item.active .timeline-marker {
+        background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+        animation: pulse 2s infinite;
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 9px;
+        top: 20px;
+        bottom: -20px;
+        width: 2px;
+        background: #e2e8f0;
+        z-index: 1;
+    }
+
+    .timeline-item:last-child::before {
+        display: none;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Invoice Header -->
+<div class="invoice-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 mb-2">
+                <i class="fas {% if original %}fa-receipt{% else %}fa-plus-circle{% endif %} mr-2"></i>
+                {% if original %}Invoice #{{ original.id }}{% else %}Create New Invoice{% endif %}
+            </h1>
+            <p class="mb-0" style="opacity: 0.9;">
+                {% if original %}
+                Managing invoice for: <strong>{{ original.event_assignment.team_member.user.get_full_name }}</strong>
+                {% else %}
+                Create a new invoice for an event
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <span class="badge bg-light text-dark fs-6 p-2 px-3">
+                <i class="fas fa-calendar-alt mr-2"></i>
+                {% now "F d, Y" %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Navigation -->
+<div class="admin-tabs">
+    <button class="admin-tab active" data-tab="invoice-details">
+        <i class="fas fa-info-circle"></i>
+        <span class="d-none d-md-inline">Invoice Details</span>
+    </button>
+    <button class="admin-tab" data-tab="payment-info">
+        <i class="fas fa-wallet"></i>
+        <span class="d-none d-md-inline">Payment Information</span>
+    </button>
+    <button class="admin-tab" data-tab="verification">
+        <i class="fas fa-shield-alt"></i>
+        <span class="d-none d-md-inline">Verification Status</span>
+    </button>
+</div>
+
+<!-- Tab Contents -->
+<div id="invoice-details" class="tab-content active">
+    <div class="tab-content-card">
+        <h2>
+            <i class="fas fa-info-circle mr-2"></i>
+            Invoice Details
+        </h2>
+        
+        {% if original %}
+        <div class="row mb-4">
+            <div class="col-md-12 text-center">
+                <span class="amount-display">KSh {{ original.total_amount }}</span>
+                <p class="text-muted">Total Amount</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% block field_sets %}
+        {% for fieldset in adminform %}
+            {% if fieldset.name != "Payment Information" and fieldset.name != "Status" %}
+                {% include "admin/includes/fieldset.html" %}
+            {% endif %}
+        {% endfor %}
+        {% endblock %}
+        
+        {% if original %}
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="mpesa-detail" style="background: #f8fafc; color: var(--mookh-dark);">
+                    <strong>Event</strong>
+                    <span>{{ original.event_assignment.event.name }}</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mpesa-detail" style="background: #f8fafc; color: var(--mookh-dark);">
+                    <strong>Team Member</strong>
+                    <span>{{ original.event_assignment.team_member.user.get_full_name }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div id="payment-info" class="tab-content" style="display: none;">
+    <div class="tab-content-card">
+        <h2>
+            <i class="fas fa-wallet mr-2"></i>
+            Payment Information
+        </h2>
+        
+        {% for fieldset in adminform %}
+            {% if fieldset.name == "Payment Information" %}
+                {% include "admin/includes/fieldset.html" %}
+            {% endif %}
+        {% endfor %}
+        
+        {% if original and original.event_assignment.team_member %}
+        <div class="mpesa-info-card">
+            <h5 class="mb-3">
+                <i class="fas fa-mobile-alt mr-2"></i>
+                M-Pesa Payment Details
+            </h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mpesa-detail">
+                        <strong>M-Pesa Number</strong>
+                        <span>{{ original.event_assignment.team_member.mpesa_number }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mpesa-detail">
+                        <strong>M-Pesa Name</strong>
+                        <span>{{ original.event_assignment.team_member.mpesa_name|default:"Not set" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-light mt-3 mb-0" style="background: rgba(255,255,255,0.2); color: white;">
+                <i class="fas fa-info-circle mr-2"></i>
+                Payment will be sent to this M-Pesa number upon invoice verification
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="mpesa-detail" style="background: #f8fafc; color: var(--mookh-dark);">
+                    <strong>shift Rate</strong>
+                    <span>KSh {{ original.shift_rate }}</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mpesa-detail" style="background: #f8fafc; color: var(--mookh-dark);">
+                    <strong>Number of Days</strong>
+                    <span>{{ original.number_of_days }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div id="verification" class="tab-content" style="display: none;">
+    <div class="tab-content-card">
+        <h2>
+            <i class="fas fa-shield-alt mr-2"></i>
+            Verification Status
+        </h2>
+        
+        {% for fieldset in adminform %}
+            {% if fieldset.name == "Status" %}
+                {% include "admin/includes/fieldset.html" %}
+            {% endif %}
+        {% endfor %}
+        
+        {% if original %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <h5>Invoice Timeline</h5>
+                <div class="timeline">
+                    <div class="timeline-item {% if original.status != 'draft' %}completed{% endif %}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <strong>Created</strong>
+                            <p class="text-muted">{{ original.created_at|date:"F d, Y H:i" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if original.status in 'submitted,verified,paid' %}completed{% elif original.status == 'submitted' %}active{% endif %}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <strong>Submitted</strong>
+                            {% if original.status in 'submitted,verified,paid' %}
+                            <p class="text-muted">Submitted for verification</p>
+                            {% else %}
+                            <p class="text-muted">Pending submission</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if original.status in 'verified,paid' %}completed{% elif original.status == 'verified' %}active{% endif %}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <strong>Verified</strong>
+                            {% if original.verified_at %}
+                            <p class="text-muted">{{ original.verified_at|date:"F d, Y H:i" }}</p>
+                            {% else %}
+                            <p class="text-muted">Pending verification</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if original.status == 'paid' %}completed{% elif original.status == 'paid' %}active{% endif %}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <strong>Paid</strong>
+                            {% if original.paid_at %}
+                            <p class="text-muted">{{ original.paid_at|date:"F d, Y H:i" }}</p>
+                            {% else %}
+                            <p class="text-muted">Payment pending</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="mpesa-detail" style="background: #f8fafc;">
+                    <strong>Invoice Date</strong>
+                    <span>{{ original.invoice_date|date:"F d, Y" }}</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mpesa-detail" style="background: #f8fafc;">
+                    <strong>Due Date</strong>
+                    <span>{{ original.due_date|date:"F d, Y" }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="submit-row mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            {% if original %}
+            <a href="{% url 'admin:invoices_eventreport_changelist' %}?event_assignment__id__exact={{ original.event_assignment.id }}" 
+               class="action-button action-button-info">
+                <i class="fas fa-file-alt mr-2"></i> View Related Reports
+            </a>
+            <a href="{% url 'admin:events_event_change' original.event_assignment.event.id %}" 
+               class="action-button action-button-success ml-2">
+                <i class="fas fa-calendar-alt mr-2"></i> View Event
+            </a>
+            <a href="{% url 'download_invoice' original.id %}" 
+               class="action-button action-button-warning ml-2" target="_blank">
+                <i class="fas fa-download mr-2"></i> Download PDF
+            </a>
+            {% endif %}
+        </div>
+        <div>
+            <button type="submit" name="_save" class="action-button action-button-primary">
+                <i class="fas fa-save mr-2"></i> Save Invoice
+            </button>
+            <a href="{% url 'admin:invoices_invoice_changelist' %}" class="btn btn-outline-secondary ml-2">
+                <i class="fas fa-times mr-2"></i> Cancel
+            </a>
+        </div>
+    </div>
+</div>
+
+{% block after_field_sets %}{% endblock %}
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching functionality
+    const tabs = document.querySelectorAll('.admin-tab');
+    const contents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+            
+            // Update active states
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.style.display = 'none');
+            
+            this.classList.add('active');
+            document.getElementById(tabId).style.display = 'block';
+            
+            // Update URL hash
+            window.location.hash = tabId;
+        });
+    });
+    
+    // Check URL hash on load
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+        const tab = document.querySelector(`[data-tab="${hash}"]`);
+        if (tab) {
+            tab.click();
+            
+            // Scroll to tabs
+            setTimeout(() => {
+                document.querySelector('.admin-tabs').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 100);
+        }
+    }
+    
+    // Add animation to form rows
+    const formRows = document.querySelectorAll('.form-row');
+    formRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(2px)';
+            this.style.backgroundColor = '#f1f5f9';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateX(0)';
+            this.style.backgroundColor = '#f8fafc';
+        });
+    });
+    
+    // Calculate total amount dynamically
+    const daysInput = document.querySelector('#id_number_of_days');
+    const rateInput = document.querySelector('#id_shift_rate');
+    const amountDisplay = document.querySelector('.amount-display');
+    
+    if (daysInput && rateInput) {
+        function updateAmount() {
+            const days = parseFloat(daysInput.value) || 0;
+            const rate = parseFloat(rateInput.value) || 0;
+            const total = days * rate;
+            
+            if (amountDisplay) {
+                amountDisplay.textContent = `KSh ${total.toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
+        }
+        
+        daysInput.addEventListener('input', updateAmount);
+        rateInput.addEventListener('input', updateAmount);
+    }
+});
+</script>
+{% endblock %}

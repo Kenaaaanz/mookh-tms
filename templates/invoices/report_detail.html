@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}Report #{{ report.id }} Details{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'my_reports' %}">My Reports</a></li>
+                <li class="breadcrumb-item active">Report #{{ report.id }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mookh-text-primary">Event Report #{{ report.id }}</h2>
+            <a href="{% url 'download_report' report.id %}" class="btn btn-primary">
+                <i class="bi bi-download me-2"></i> Download PDF
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Main Content -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Report Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Event:</strong> {{ event.name }}</p>
+                        <p><strong>Location:</strong> {{ event.location }}</p>
+                        <p><strong>Date:</strong> {{ event.start_date|date:"M d, Y" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> 
+                            <span class="status-badge status-{{ report.status }}">
+                                {{ report.get_status_display }}
+                            </span>
+                        </p>
+                        <p><strong>Submitted:</strong> {{ report.submitted_at|date:"M d, Y H:i" }}</p>
+                        <p><strong>Attendance Hours:</strong> {{ report.attendance_hours }}</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6>Work Summary</h6>
+                <div class="border rounded p-3 bg-light">
+                    {{ report.work_summary|linebreaks }}
+                </div>
+                
+                {% if report.challenges_faced %}
+                <h6 class="mt-4">Challenges Faced</h6>
+                <div class="border rounded p-3 bg-light">
+                    {{ report.challenges_faced|linebreaks }}
+                </div>
+                {% endif %}
+                
+                {% if report.suggestions %}
+                <h6 class="mt-4">Suggestions</h6>
+                <div class="border rounded p-3 bg-light">
+                    {{ report.suggestions|linebreaks }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Review Info -->
+        <div class="card mb-4">
+            <div class="card-header bg-{% if report.status == 'approved' %}success{% elif report.status == 'rejected' %}danger{% else %}warning{% endif %} text-white">
+                <h5 class="mb-0">Review Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Status:</strong><br>
+                    <span class="status-badge status-{{ report.status }} fs-6">
+                        {{ report.get_status_display }}
+                    </span>
+                </p>
+                
+                {% if report.reviewed_by %}
+                <p><strong>Reviewed By:</strong><br>{{ report.reviewed_by.get_full_name }}</p>
+                <p><strong>Reviewed At:</strong><br>{{ report.reviewed_at|date:"M d, Y H:i" }}</p>
+                {% endif %}
+                
+                {% if report.review_notes %}
+                <p><strong>Review Notes:</strong><br>
+                    <blockquote class="blockquote">
+                        <p class="mb-0">{{ report.review_notes }}</p>
+                    </blockquote>
+                </p>
+                {% endif %}
+                
+                <hr>
+                
+                <h6>Timeline</h6>
+                <div class="timeline mt-3">
+                    <div class="timeline-item completed">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <strong>Submitted</strong>
+                            <small class="text-muted d-block">{{ report.submitted_at|date:"M d, Y H:i" }}</small>
+                        </div>
+                    </div>
+                    <div class="timeline-item {% if report.reviewed_at %}completed{% endif %}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <strong>Reviewed</strong>
+                            {% if report.reviewed_at %}
+                            <small class="text-muted d-block">{{ report.reviewed_at|date:"M d, Y H:i" }}</small>
+                            {% else %}
+                            <small class="text-muted">Pending review</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Info -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Team Member</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Name:</strong><br>{{ team_member.user.get_full_name }}</p>
+                <p><strong>Email:</strong><br>{{ team_member.user.email }}</p>
+                <p><strong>M-Pesa:</strong><br>{{ team_member.mpesa_number }}</p>
+                <p><strong>Role:</strong><br>{% if is_team_lead %}Team Lead{% else %}Team Member{% endif %}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    border: 2px solid #fff;
+}
+
+.timeline-item.completed .timeline-marker {
+    background-color: var(--mookh-primary);
+}
+
+.timeline-content {
+    padding-bottom: 10px;
+}
+</style>
+{% endblock %}

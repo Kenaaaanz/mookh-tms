@@ -3,7 +3,7 @@ from django.utils import timezone
 from .models import Invoice, EventReport
 
 class InvoiceForm(forms.ModelForm):
-    daily_rate = forms.DecimalField(
+    shift_rate = forms.DecimalField(
         max_digits=10,
         decimal_places=2,
         min_value=0,
@@ -12,7 +12,7 @@ class InvoiceForm(forms.ModelForm):
     
     class Meta:
         model = Invoice
-        fields = ['number_of_days', 'daily_rate', 'payment_method', 'additional_notes', 'due_date']
+        fields = ['number_of_days', 'shift_rate', 'payment_method', 'additional_notes', 'due_date']
         widgets = {
             'additional_notes': forms.Textarea(attrs={'rows': 3}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),
@@ -25,8 +25,8 @@ class InvoiceForm(forms.ModelForm):
         
         if self.assignment and hasattr(self.assignment, 'team_member'):
             team_member = self.assignment.team_member
-            if hasattr(team_member, 'daily_rate') and team_member.daily_rate:
-                self.fields['daily_rate'].initial = team_member.daily_rate
+            if hasattr(team_member, 'shift_rate') and team_member.shift_rate:
+                self.fields['shift_rate'].initial = team_member.shift_rate
     
     def clean_number_of_days(self):
         days = self.cleaned_data.get('number_of_days')
@@ -36,11 +36,11 @@ class InvoiceForm(forms.ModelForm):
             raise forms.ValidationError("Number of days cannot exceed 365.")
         return days
     
-    def clean_daily_rate(self):
-        daily_rate = self.cleaned_data.get('daily_rate')
-        if daily_rate is None or daily_rate <= 0:
-            raise forms.ValidationError("Daily rate must be greater than 0.")
-        return daily_rate
+    def clean_shift_rate(self):
+        shift_rate = self.cleaned_data.get('shift_rate')
+        if shift_rate is None or shift_rate <= 0:
+            raise forms.ValidationError("shift rate must be greater than 0.")
+        return shift_rate
     
     def clean_due_date(self):
         due_date = self.cleaned_data.get('due_date')

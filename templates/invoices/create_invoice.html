@@ -54,7 +54,7 @@
                         {{ form.number_of_days|as_crispy_field }}
                     </div>
                     <div class="col-md-6">
-                        {{ form.daily_rate|as_crispy_field }}
+                        {{ form.shift_rate|as_crispy_field }}
                     </div>
                 </div>
                 
@@ -80,7 +80,7 @@
                                 <p class="mb-1"><strong>Days:</strong> <span id="previewDays">1</span></p>
                             </div>
                             <div class="col-md-4">
-                                <p class="mb-1"><strong>Daily Rate:</strong> KSh <span id="previewRate">0</span></p>
+                                <p class="mb-1"><strong>shift Rate:</strong> KSh <span id="previewRate">0</span></p>
                             </div>
                             <div class="col-md-4">
                                 <p class="mb-0"><strong>Total Amount:</strong></p>
@@ -115,7 +115,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const daysInput = document.querySelector('#id_number_of_days');
-    const rateInput = document.querySelector('#id_daily_rate');
+    const rateInput = document.querySelector('#id_shift_rate');
     const previewDays = document.getElementById('previewDays');
     const previewRate = document.getElementById('previewRate');
     const previewTotal = document.getElementById('previewTotal');

@@ -175,7 +175,7 @@ class TeamMemberRegistrationForm(UserCreationForm):
                 mpesa_name=self.cleaned_data.get('mpesa_name', ''),
                 id_number=self.cleaned_data.get('id_number', ''),
                 address=self.cleaned_data['address'],
-                daily_rate=0.00,  # Default daily rate, will be set per invoice
+                shift_rate=0.00,  # Default shift rate, will be set per invoice
                 is_verified=False  # Admin needs to verify
             )
         

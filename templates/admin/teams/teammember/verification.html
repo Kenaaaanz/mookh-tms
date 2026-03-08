@@ -1,0 +1,235 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    :root {
+        --mookh-primary: #1E3A8A;
+        --mookh-secondary: #3B82F6;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .verification-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .status-banner {
+        padding: 2rem;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .status-banner.verified {
+        background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+        border-left: 4px solid #10B981;
+    }
+
+    .status-banner.pending {
+        background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+        border-left: 4px solid #F59E0B;
+    }
+
+    .status-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .status-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .stat-card {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .stat-label {
+        color: #64748B;
+        margin-top: 0.5rem;
+    }
+
+    .activity-item {
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+    .activity-item:hover {
+        background: #f1f5f9;
+        transform: translateX(2px);
+    }
+
+    .action-button {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .action-button-success {
+        background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+        color: white;
+    }
+
+    .action-button-warning {
+        background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+        color: white;
+    }
+
+    .action-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 mb-2">
+                <i class="fas fa-shield-alt mr-2"></i>
+                Verification Status
+            </h1>
+            <p class="mb-0" style="opacity: 0.9;">
+                Managing verification for: <strong>{{ team_member.user.get_full_name }}</strong>
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'admin:teams_teammember_change' team_member.id %}" class="btn btn-light">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="verification-card">
+    <!-- Status Banner -->
+    <div class="status-banner {% if team_member.is_verified %}verified{% else %}pending{% endif %}">
+        <div class="status-icon">
+            <i class="fas {% if team_member.is_verified %}fa-check-circle{% else %}fa-clock{% endif %}"></i>
+        </div>
+        <div class="status-title">
+            {% if team_member.is_verified %}
+            Verified Account
+            {% else %}
+            Pending Verification
+            {% endif %}
+        </div>
+        <p class="mb-0">
+            Account created on {{ team_member.created_at|date:"F d, Y" }}
+        </p>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ events_count }}</div>
+            <div class="stat-label">Assigned Events</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ reports_count }}</div>
+            <div class="stat-label">Reports Submitted</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ invoices_count }}</div>
+            <div class="stat-label">Invoices Created</div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <h5 class="mb-3">Recent Activity</h5>
+    {% for assignment in recent_events %}
+    <div class="activity-item">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <strong>{{ assignment.event.name }}</strong>
+                <br>
+                <small class="text-muted">{{ assignment.event.start_date|date:"M d, Y" }}</small>
+            </div>
+            <span class="badge {% if assignment.is_team_lead %}bg-warning{% else %}bg-secondary{% endif %}">
+                {% if assignment.is_team_lead %}Team Lead{% else %}Member{% endif %}
+            </span>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-muted text-center py-3">No recent activity</p>
+    {% endfor %}
+    
+    <!-- Verification Actions -->
+    <hr class="my-4">
+    
+    <div class="text-center">
+        {% if not team_member.is_verified %}
+        <p class="text-muted mb-3">
+            <i class="fas fa-exclamation-triangle mr-2 text-warning"></i>
+            This team member cannot submit invoices or reports until verified.
+        </p>
+        <form method="post" action="{% url 'admin:teams_teammember_changelist' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="verify_selected_members">
+            <input type="hidden" name="_selected_action" value="{{ team_member.id }}">
+            <button type="submit" class="action-button action-button-success">
+                <i class="fas fa-check-circle mr-2"></i> Verify This Member
+            </button>
+        </form>
+        {% else %}
+        <p class="text-muted mb-3">
+            <i class="fas fa-check-circle mr-2 text-success"></i>
+            This team member can submit invoices and reports.
+        </p>
+        <form method="post" action="{% url 'admin:teams_teammember_changelist' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="unverify_selected_members">
+            <input type="hidden" name="_selected_action" value="{{ team_member.id }}">
+            <button type="submit" class="action-button action-button-warning">
+                <i class="fas fa-times-circle mr-2"></i> Unverify This Member
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

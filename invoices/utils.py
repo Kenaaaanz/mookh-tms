@@ -47,7 +47,7 @@ def generate_invoice_pdf(invoice):
     header_text = f"""
     <font size="24" color="#1E3A8A"><b>MOOKH</b></font><br/>
     <font size="12" color="#3B82F6">Ticket Validation System</font><br/>
-    <font size="10">123 Business Street, City, Country</font><br/>
+    <font size="10">123 Business Street, Nairobi, Kenya</font><br/>
     <font size="10">contact@mookh.com | www.mookh.com</font>
     """
     content.append(Paragraph(header_text, title_style))
@@ -61,11 +61,17 @@ def generate_invoice_pdf(invoice):
     # Bill To and Invoice Details Table
     bill_to_data = [
         ['<b>Bill To:</b>', '<b>Invoice Details:</b>'],
-        [invoice.event_assignment.team_member.user.get_full_name(), f'<b>Invoice Date:</b> {invoice.invoice_date}'],
-        [invoice.event_assignment.team_member.user.email, f'<b>Due Date:</b> {invoice.due_date}'],
-        [invoice.event_assignment.team_member.phone, f'<b>Status:</b> {invoice.get_status_display()}'],
-        ['', f'<b>Payment Terms:</b> 30 days']
+        [invoice.event_assignment.team_member.user.get_full_name(), f'<b>Invoice Date:</b> {invoice.invoice_date.strftime("%B %d, %Y") if invoice.invoice_date else "N/A"}'],
+        [invoice.event_assignment.team_member.user.email, f'<b>Due Date:</b> {invoice.due_date.strftime("%B %d, %Y") if invoice.due_date else "N/A"}'],
+        [f'M-Pesa: {invoice.event_assignment.team_member.mpesa_number}', f'<b>Status:</b> {invoice.get_status_display()}'],
+        ['', f'<b>Payment Method:</b> {invoice.get_payment_method_display()}']
     ]
+    
+    # Add M-Pesa transaction info if available
+    if invoice.mpesa_transaction_id:
+        bill_to_data.append(['', f'<b>M-Pesa Transaction ID:</b> {invoice.mpesa_transaction_id}'])
+    if invoice.mpesa_confirmation_code:
+        bill_to_data.append(['', f'<b>M-Pesa Confirmation:</b> {invoice.mpesa_confirmation_code}'])
     
     bill_to_table = Table(bill_to_data, colWidths=[2.5*inch, 2.5*inch])
     bill_to_table.setStyle(TableStyle([
@@ -85,7 +91,7 @@ def generate_invoice_pdf(invoice):
     event_data = [
         f"<b>Event:</b> {invoice.event_assignment.event.name}",
         f"<b>Location:</b> {invoice.event_assignment.event.location}",
-        f"<b>Dates:</b> {invoice.event_assignment.event.start_date.strftime('%B %d, %Y')} to {invoice.event_assignment.event.end_date.strftime('%B %d, %Y')}",
+        f"<b>Dates:</b> {invoice.event_assignment.event.start_date.strftime('%B %d, %Y') if invoice.event_assignment.event.start_date else 'N/A'} to {invoice.event_assignment.event.end_date.strftime('%B %d, %Y') if invoice.event_assignment.event.end_date else 'N/A'}",
         f"<b>Role:</b> {'Team Lead' if invoice.event_assignment.is_team_lead else 'Team Member'}"
     ]
     
@@ -94,19 +100,19 @@ def generate_invoice_pdf(invoice):
     
     content.append(Spacer(1, 20))
     
-    # Invoice Items Table
+    # Invoice Items Table (UPDATED for shift rate)
     items_heading = Paragraph("<b>Invoice Items:</b>", heading_style)
     content.append(items_heading)
     
     items_data = [
-        ['<b>Description</b>', '<b>Hours</b>', '<b>Rate</b>', '<b>Amount</b>'],
+        ['<b>Description</b>', '<b>Days</b>', '<b>shift Rate</b>', '<b>Amount (KSh)</b>'],
         ['Event Ticket Validation Services', 
-         f"{invoice.total_hours}", 
-         f"${invoice.hourly_rate:.2f}", 
-         f"${invoice.total_amount:.2f}"]
+         f"{invoice.number_of_days}", 
+         f"{invoice.shift_rate:,.2f}", 
+         f"{invoice.total_amount:,.2f}"]
     ]
     
-    items_table = Table(items_data, colWidths=[3*inch, 1*inch, 1*inch, 1*inch])
+    items_table = Table(items_data, colWidths=[3*inch, 1*inch, 1.5*inch, 1.5*inch])
     items_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), HexColor('#1E3A8A')),
         ('TEXTCOLOR', (0, 0), (-1, 0), white),
@@ -122,41 +128,40 @@ def generate_invoice_pdf(invoice):
     
     # Total Amount
     total_data = [
-        ['', '', '<b>Subtotal:</b>', f"${invoice.total_amount:.2f}"],
-        ['', '', '<b>Tax (0%):</b>', '$0.00'],
-        ['', '', '<b>Total:</b>', f"<font size='12'><b>${invoice.total_amount:.2f}</b></font>"]
+        ['', '', '<b>Subtotal:</b>', f"KSh {invoice.total_amount:,.2f}"],
+        ['', '', '<b>Tax (0%):</b>', 'KSh 0.00'],
+        ['', '', '<b>Total:</b>', f"<font size='12'><b>KSh {invoice.total_amount:,.2f}</b></font>"]
     ]
     
-    total_table = Table(total_data, colWidths=[3*inch, 1*inch, 1*inch, 1*inch])
+    total_table = Table(total_data, colWidths=[3*inch, 1*inch, 1.5*inch, 1.5*inch])
     total_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
     ]))
     content.append(total_table)
-    content.append(Spacer(1, 30))
-    
-    # Bank Details
-    bank_heading = Paragraph("<b>Bank Details:</b>", heading_style)
-    content.append(bank_heading)
-    
-    bank_data = [
-        f"<b>Bank Name:</b> {invoice.event_assignment.team_member.bank_name}",
-        f"<b>Account Number:</b> {invoice.event_assignment.team_member.account_number}",
-        f"<b>IFSC Code:</b> {invoice.event_assignment.team_member.ifsc_code}"
-    ]
-    
-    for item in bank_data:
-        content.append(Paragraph(item, normal_style))
-    
     content.append(Spacer(1, 20))
     
-    # Additional Notes
-    if invoice.additional_notes:
-        notes_heading = Paragraph("<b>Additional Notes:</b>", heading_style)
-        content.append(notes_heading)
-        content.append(Paragraph(invoice.additional_notes, normal_style))
-        content.append(Spacer(1, 20))
+    # M-Pesa Payment Instructions
+    content.append(Spacer(1, 15))
+    payment_instructions = Paragraph("<b>M-Pesa Payment Instructions:</b>", heading_style)
+    content.append(payment_instructions)
+    
+    instructions = [
+        "1. Go to M-Pesa on your phone",
+        "2. Select 'Lipa na M-Pesa'",
+        "3. Select 'Pay Bill'",
+        "4. Enter Business Number: 123456",
+        f"5. Enter Account Number: {invoice.id:06d}",
+        f"6. Enter Amount: KSh {invoice.total_amount:,.2f}",
+        "7. Enter your M-Pesa PIN and confirm",
+        "8. You will receive an SMS confirmation"
+    ]
+    
+    for instruction in instructions:
+        content.append(Paragraph(instruction, normal_style))
+    
+    content.append(Spacer(1, 20))
     
     # Footer
     footer_text = """
@@ -164,7 +169,8 @@ def generate_invoice_pdf(invoice):
     <b>Terms & Conditions:</b><br/>
     1. Payment is due within 30 days of invoice date.<br/>
     2. Late payments may be subject to late fees.<br/>
-    3. All amounts are in USD unless otherwise specified.<br/><br/>
+    3. All amounts are in Kenyan Shillings (KSh).<br/>
+    4. For any queries, contact finance@mookh.com<br/><br/>
     Thank you for your excellent service!
     </font>
     """

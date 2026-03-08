@@ -33,31 +33,46 @@ def event_list(request):
 def my_events(request):
     try:
         team_member = TeamMember.objects.get(user=request.user)
+        
+        # Get all events the user is assigned to
         events = Event.objects.filter(
             assignments__team_member=team_member
         ).distinct().order_by('-start_date')
         
-        # Calculate counts for statistics
-        total_events = events.count()
+        # Annotate each event with the user's specific assignment
+        for event in events:
+            event.user_assignments = EventAssignment.objects.filter(
+                event=event,
+                team_member=team_member
+            ).select_related(
+                'report',
+                'team_member__user'
+            ).prefetch_related('invoices').first()
+        
+        # Calculate counts
         upcoming_count = events.filter(status='upcoming').count()
         ongoing_count = events.filter(status='ongoing').count()
         completed_count = events.filter(status='completed').count()
         
+        context = {
+            'events': events,
+            'team_member': team_member,
+            'upcoming_count': upcoming_count,
+            'ongoing_count': ongoing_count,
+            'completed_count': completed_count,
+        }
     except TeamMember.DoesNotExist:
         events = Event.objects.none()
-        total_events = 0
-        upcoming_count = 0
-        ongoing_count = 0
-        completed_count = 0
+        context = {
+            'events': events,
+            'team_member': None,
+            'upcoming_count': 0,
+            'ongoing_count': 0,
+            'completed_count': 0,
+        }
         messages.warning(request, 'Complete your profile to view events.')
     
-    return render(request, 'events/my_events.html', {
-        'events': events,
-        'total_events': total_events,
-        'upcoming_count': upcoming_count,
-        'ongoing_count': ongoing_count,
-        'completed_count': completed_count,
-    })
+    return render(request, 'events/my_events.html', context)
 
 @login_required
 def event_detail(request, event_id):
@@ -72,9 +87,14 @@ def event_detail(request, event_id):
     if not request.user.is_staff:
         try:
             team_member = TeamMember.objects.get(user=request.user)
-            user_assignment = assignments.filter(team_member=team_member).first()
-            is_assigned = user_assignment is not None
-            is_team_lead = user_assignment.is_team_lead if user_assignment else False
+            # Fix: Filter by team_member_id or team_member field properly
+            user_assignment = assignments.filter(team_member_id=team_member.id).first()
+            # OR:
+            # user_assignment = assignments.filter(team_member=team_member).first()
+            
+            if user_assignment:
+                is_assigned = True
+                is_team_lead = user_assignment.is_team_lead
         except TeamMember.DoesNotExist:
             pass
     
@@ -93,6 +113,7 @@ def event_detail(request, event_id):
     }
     
     return render(request, 'events/event_detail.html', context)
+
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
@@ -131,4 +152,56 @@ def assign_team_members(request, event_id):
         'assigned_members': assigned_members,
     })
 
+from django.shortcuts import render, get_object_or_404
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import messages
+from .models import Event, EventAssignment
+from invoices.models import Invoice, EventReport
+
+@staff_member_required
+def event_assignments(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    assignments = EventAssignment.objects.filter(event=event).select_related('team_member__user')
+    
+    context = {
+        'event': event,
+        'assignments': assignments,
+        'title': f'Team Assignments - {event.name}',
+        'opts': event._meta,
+        'original': event,
+        'is_popup': False,
+        'save_as': False,
+        'has_delete_permission': True,
+        'has_add_permission': True,
+        'has_change_permission': True,
+        'has_view_permission': True,
+        'has_absolute_url': False,
+    }
+    return render(request, 'admin/events/event/assignments.html', context)
+
+@staff_member_required
+def event_reports_invoices(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    assignments = EventAssignment.objects.filter(event=event).select_related('team_member__user')
+    
+    reports = EventReport.objects.filter(event_assignment__event=event).select_related(
+        'event_assignment__team_member__user',
+        'event_assignment__event'
+    )
+    
+    invoices = Invoice.objects.filter(event_assignment__event=event).select_related(
+        'event_assignment__team_member__user',
+        'event_assignment__event'
+    )
+    
+    context = {
+        'event': event,
+        'assignments': assignments,
+        'reports': reports,
+        'invoices': invoices,
+        'title': f'Reports & Invoices - {event.name}',
+        'opts': event._meta,
+        'original': event,
+    }
+    return render(request, 'admin/events/event/reports_invoices.html', context)
     

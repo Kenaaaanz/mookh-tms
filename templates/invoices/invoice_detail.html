@@ -75,7 +75,7 @@
                             <tr>
                                 <th>Description</th>
                                 <th>Days</th>
-                                <th>Daily Rate</th>
+                                <th>shift Rate</th>
                                 <th>Amount</th>
                             </tr>
                         </thead>
@@ -83,7 +83,7 @@
                             <tr>
                                 <td>Event Ticket Validation Services</td>
                                 <td>{{ invoice.number_of_days }}</td>
-                                <td>KSh {{ invoice.daily_rate|floatformat:2 }}</td>
+                                <td>KSh {{ invoice.shift_rate|floatformat:2 }}</td>
                                 <td>KSh {{ invoice.total_amount|floatformat:2 }}</td>
                             </tr>
                         </tbody>

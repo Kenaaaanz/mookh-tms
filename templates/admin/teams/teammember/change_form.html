@@ -1,0 +1,528 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}{{ title }} | Team Member Management{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+<style>
+    :root {
+        --mookh-primary: #1E3A8A;
+        --mookh-secondary: #3B82F6;
+        --mookh-accent: #10B981;
+        --mookh-light: #F8FAFC;
+        --mookh-dark: #1E293B;
+    }
+
+    /* Dashboard-style header */
+    .member-header {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Tab navigation */
+    .admin-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .admin-tab {
+        flex: 1;
+        padding: 1rem;
+        text-align: center;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #64748B;
+        transition: all 0.3s ease;
+        background: transparent;
+        border: none;
+        text-decoration: none;
+        display: block;
+    }
+
+    .admin-tab:hover {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        color: var(--mookh-primary);
+        transform: translateY(-2px);
+        text-decoration: none;
+    }
+
+    .admin-tab.active {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+        box-shadow: 0 4px 10px rgba(30, 58, 138, 0.3);
+    }
+
+    .admin-tab i {
+        margin-right: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    /* Tab content cards */
+    .tab-content-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .tab-content-card:hover {
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .tab-content-card h2 {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    /* Field styling */
+    .form-row {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .form-row:hover {
+        background: #f1f5f9;
+        transform: translateX(2px);
+    }
+
+    label {
+        font-weight: 600;
+        color: var(--mookh-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    input, textarea, select {
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 0.75rem;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+
+    input:focus, textarea:focus, select:focus {
+        border-color: var(--mookh-secondary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    /* M-Pesa Info Card */
+    .mpesa-info-card {
+        background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: white;
+        margin-top: 1.5rem;
+    }
+
+    .mpesa-detail {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .mpesa-detail strong {
+        display: block;
+        font-size: 0.875rem;
+        opacity: 0.8;
+        margin-bottom: 0.25rem;
+    }
+
+    .mpesa-detail span {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    /* Status badges */
+    .status-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 50rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .status-verified {
+        background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+        color: white;
+    }
+
+    .status-pending {
+        background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+        color: white;
+    }
+
+    /* Action buttons */
+    .action-button {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .action-button-primary {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+    }
+
+    .action-button-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    .action-button-success {
+        background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+        color: white;
+    }
+
+    .action-button-success:hover {
+        color: white;
+        text-decoration: none;
+    }
+
+    .action-button-warning {
+        background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+        color: white;
+    }
+
+    .action-button-warning:hover {
+        color: white;
+        text-decoration: none;
+    }
+
+    .action-button-info {
+        background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+        color: white;
+    }
+
+    .action-button-info:hover {
+        color: white;
+        text-decoration: none;
+    }
+
+    .action-button-sm {
+        padding: 0.35rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    /* Quick stats cards */
+    .quick-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .stat-mini-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-mini-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-mini-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+    }
+
+    .stat-mini-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .stat-mini-label {
+        color: #64748B;
+        font-size: 0.875rem;
+    }
+
+    /* Verification badge */
+    .verification-badge {
+        text-align: center;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-top: 1rem;
+    }
+
+    .verification-badge.verified {
+        background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+        border-left: 4px solid #10B981;
+    }
+
+    .verification-badge.pending {
+        background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+        border-left: 4px solid #F59E0B;
+    }
+
+    .verification-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Navigation info */
+    .nav-info {
+        font-size: 0.875rem;
+        color: #64748B;
+        margin-top: 0.5rem;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Team Member Header -->
+<div class="member-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 mb-2">
+                <i class="fas {% if original %}fa-user-edit{% else %}fa-user-plus{% endif %} mr-2"></i>
+                {% if original %}Edit Team Member{% else %}Add New Team Member{% endif %}
+            </h1>
+            <p class="mb-0" style="opacity: 0.9;">
+                {% if original %}
+                Managing profile for: <strong>{{ original.user.get_full_name }}</strong>
+                {% else %}
+                Create a new team member profile
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <span class="badge bg-light text-dark fs-6 p-2 px-3">
+                <i class="fas fa-calendar-alt mr-2"></i>
+                {% now "F d, Y" %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Navigation - Now with proper links -->
+<div class="admin-tabs">
+    <a href="{% if original %}{% url 'admin:teams_teammember_change' original.id %}{% else %}#{% endif %}" 
+       class="admin-tab {% if not request.GET.tab or request.GET.tab == 'personal' %}active{% endif %}"
+       data-tab="personal">
+        <i class="fas fa-user"></i>
+        <span class="d-none d-md-inline">Personal Information</span>
+    </a>
+    
+    {% if original %}
+    <a href="{% url 'team_member_payment' original.id %}" 
+       class="admin-tab {% if request.GET.tab == 'payment' %}active{% endif %}">
+        <i class="fas fa-wallet"></i>
+        <span class="d-none d-md-inline">Payment Information</span>
+    </a>
+    
+    <a href="{% url 'team_member_verification' original.id %}" 
+       class="admin-tab {% if request.GET.tab == 'verification' %}active{% endif %}">
+        <i class="fas fa-shield-alt"></i>
+        <span class="d-none d-md-inline">Verification Status</span>
+    </a>
+    
+    <a href="{% url 'team_member_activity' original.id %}" 
+       class="admin-tab {% if request.GET.tab == 'activity' %}active{% endif %}">
+        <i class="fas fa-chart-line"></i>
+        <span class="d-none d-md-inline">Activity Log</span>
+    </a>
+    {% else %}
+    <span class="admin-tab" style="opacity: 0.5; cursor: not-allowed;">
+        <i class="fas fa-wallet"></i>
+        <span class="d-none d-md-inline">Payment Information</span>
+    </span>
+    <span class="admin-tab" style="opacity: 0.5; cursor: not-allowed;">
+        <i class="fas fa-shield-alt"></i>
+        <span class="d-none d-md-inline">Verification Status</span>
+    </span>
+    {% endif %}
+</div>
+
+<!-- Main Form Content -->
+<div id="personal-info" class="tab-content active">
+    <div class="tab-content-card">
+        <h2>
+            <i class="fas fa-user-circle mr-2"></i>
+            Personal Details
+        </h2>
+        
+        {% block field_sets %}
+            {% for fieldset in adminform %}
+                {% if fieldset.name == "Personal Information" or not fieldset.name %}
+                    {% include "admin/includes/fieldset.html" %}
+                {% endif %}
+            {% endfor %}
+        {% endblock %}
+        
+        {% if original %}
+        <div class="mpesa-info-card">
+            <h5 class="mb-3">
+                <i class="fas fa-address-card mr-2"></i>
+                Contact Summary
+            </h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mpesa-detail">
+                        <strong>Phone Number</strong>
+                        <span>{{ original.phone }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mpesa-detail">
+                        <strong>Email Address</strong>
+                        <span>{{ original.user.email }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Stats (if original exists) -->
+{% if original %}
+<div class="quick-stats-grid">
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="stat-mini-number">{{ events_count|default:"0" }}</div>
+        <div class="stat-mini-label">Assigned Events</div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #10B981 0%, #34D399 100%);">
+            <i class="fas fa-file-alt"></i>
+        </div>
+        <div class="stat-mini-number">{{ reports_count|default:"0" }}</div>
+        <div class="stat-mini-label">Reports Submitted</div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);">
+            <i class="fas fa-receipt"></i>
+        </div>
+        <div class="stat-mini-number">{{ invoices_count|default:"0" }}</div>
+        <div class="stat-mini-label">Invoices Created</div>
+    </div>
+</div>
+
+<!-- Navigation Info -->
+<div class="nav-info">
+    <i class="fas fa-info-circle mr-1"></i>
+    Click on the tabs above to view detailed payment information, verification status, and activity log.
+</div>
+{% endif %}
+
+<!-- Action Buttons -->
+<div class="submit-row mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            {% if original %}
+            <a href="{% url 'admin:events_eventassignment_changelist' %}?team_member__id__exact={{ original.id }}" 
+               class="action-button action-button-info">
+                <i class="fas fa-calendar-alt mr-2"></i> View Assigned Events
+            </a>
+            <a href="{% url 'admin:invoices_invoice_changelist' %}?event_assignment__team_member__id__exact={{ original.id }}" 
+               class="action-button action-button-success ml-2">
+                <i class="fas fa-receipt mr-2"></i> View Invoices
+            </a>
+            <a href="{% url 'admin:invoices_eventreport_changelist' %}?event_assignment__team_member__id__exact={{ original.id }}" 
+               class="action-button action-button-warning ml-2">
+                <i class="fas fa-file-alt mr-2"></i> View Reports
+            </a>
+            {% endif %}
+        </div>
+        <div>
+            <button type="submit" name="_save" class="action-button action-button-primary">
+                <i class="fas fa-save mr-2"></i> Save Member
+            </button>
+            <a href="{% url 'admin:teams_teammember_changelist' %}" class="btn btn-outline-secondary ml-2">
+                <i class="fas fa-times mr-2"></i> Cancel
+            </a>
+        </div>
+    </div>
+</div>
+
+{% block after_field_sets %}{% endblock %}
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add animation to form rows
+    const formRows = document.querySelectorAll('.form-row');
+    formRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(2px)';
+            this.style.backgroundColor = '#f1f5f9';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateX(0)';
+            this.style.backgroundColor = '#f8fafc';
+        });
+    });
+    
+    // Animate stats cards
+    const statCards = document.querySelectorAll('.stat-mini-card');
+    statCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-3px) scale(1.02)';
+            this.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+            this.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+        });
+    });
+});
+</script>
+{% endblock %}

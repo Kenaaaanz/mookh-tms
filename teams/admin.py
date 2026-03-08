@@ -1,54 +1,54 @@
-from django.contrib import admin, messages
+from django.contrib import admin
+from django.utils.html import format_html
+from django.urls import reverse
 from .models import TeamMember
 
 @admin.register(TeamMember)
 class TeamMemberAdmin(admin.ModelAdmin):
-    list_display = ['user', 'phone', 'mpesa_number', 'daily_rate', 'is_verified', 'created_at']
+    list_display = ['user', 'phone', 'mpesa_number', 'shift_rate', 'is_verified', 'created_at']
     list_filter = ['is_verified', 'created_at']
     search_fields = ['user__username', 'user__email', 'phone', 'mpesa_number', 'id_number']
-    readonly_fields = ['created_at']
+    readonly_fields = ['created_at', 'user_link']
+    list_editable = ['is_verified']
     actions = ['verify_selected_members', 'unverify_selected_members']
     
     fieldsets = (
         ('Personal Information', {
-            'fields': ('user', 'phone', 'id_number', 'address')
+            'fields': ('user_link', 'phone', 'id_number', 'address')
         }),
         ('Payment Information', {
-            'fields': ('daily_rate', 'mpesa_number', 'mpesa_name')
+            'fields': ('shift_rate', 'mpesa_number', 'mpesa_name'),
+            'classes': ('wide',)
         }),
         ('Verification', {
-            'fields': ('is_verified', 'created_at')
+            'fields': ('is_verified', 'created_at'),
+            'classes': ('wide',)
         }),
     )
     
+    def user_link(self, obj):
+        if obj.user:
+            url = reverse('admin:auth_user_change', args=[obj.user.id])
+            return format_html('<a href="{}">{} ({})</a>', url, obj.user.get_full_name(), obj.user.username)
+        return "-"
+    user_link.short_description = 'User'
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('user')
+    
     def verify_selected_members(self, request, queryset):
-        """Admin action to verify selected team members"""
         updated = queryset.update(is_verified=True)
-        self.message_user(
-            request, 
-            f'Successfully verified {updated} team member(s).',
-            messages.SUCCESS
-        )
+        self.message_user(request, f'Successfully verified {updated} team member(s).')
     verify_selected_members.short_description = "Verify selected team members"
     
     def unverify_selected_members(self, request, queryset):
-        """Admin action to unverify selected team members"""
         updated = queryset.update(is_verified=False)
-        self.message_user(
-            request, 
-            f'Successfully unverified {updated} team member(s).',
-            messages.WARNING
-        )
+        self.message_user(request, f'Successfully unverified {updated} team member(s).')
     unverify_selected_members.short_description = "Unverify selected team members"
     
-    def get_readonly_fields(self, request, obj=None):
-        """Make certain fields read-only for non-superusers"""
-        if not request.user.is_superuser:
-            return self.readonly_fields + ('is_verified',)
-        return self.readonly_fields
-    
-    def get_queryset(self, request):
-        """Optimize queryset for admin display"""
-        queryset = super().get_queryset(request)
-        queryset = queryset.select_related('user')
-        return queryset
+    class Media:
+        css = {
+            'all': ('css/admin-tabs.css',)
+        }
+        js = ('js/admin-tabs.js',)

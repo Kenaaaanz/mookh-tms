@@ -8,17 +8,17 @@ def create_superuser(apps, schema_editor):
     # Check if superuser already exists
     if not User.objects.filter(is_superuser=True).exists():
         user = User.objects.create_superuser(
-            username='Kenani',
-            email='gichabakenani@gmail.com',
+            username='admin',
+            email='testadmin@gmail.com',
             password='admin123'
         )
-        user.first_name = 'Kenani'
-        user.last_name = 'Gichaba'
+        user.first_name = 'admin'
+        user.last_name = 'test'
         user.save()
 
 def reverse_func(apps, schema_editor):
     User = apps.get_model('auth', 'User')
-    User.objects.filter(username='Kenani').delete()
+    User.objects.filter(username='admin').delete()
 
 class Migration(migrations.Migration):
     dependencies = [

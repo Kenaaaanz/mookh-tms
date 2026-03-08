@@ -1,0 +1,217 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Copy all the styles from the change_form.html */
+    :root {
+        --mookh-primary: #1E3A8A;
+        --mookh-secondary: #3B82F6;
+        --mookh-accent: #10B981;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .assignments-table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .assignments-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .assignments-table th {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+        padding: 1rem;
+        font-weight: 500;
+    }
+
+    .assignments-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .assignments-table tr:hover {
+        background: #f8fafc;
+    }
+
+    .action-button {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .action-button-info {
+        background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+        color: white;
+    }
+
+    .action-button-success {
+        background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+        color: white;
+    }
+
+    .action-button-warning {
+        background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+        color: white;
+    }
+
+    .action-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        color: white;
+        text-decoration: none;
+    }
+
+    .status-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 50rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .role-lead {
+        background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+        color: white;
+    }
+
+    .role-member {
+        background: linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 mb-2">
+                <i class="fas fa-users mr-2"></i>
+                Team Assignments
+            </h1>
+            <p class="mb-0" style="opacity: 0.9;">
+                Managing team members for event: <strong>{{ event.name }}</strong>
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'admin:events_event_change' event.id %}" class="btn btn-light">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Event
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="assignments-table">
+    <table>
+        <thead>
+            <tr>
+                <th>Team Member</th>
+                <th>Contact</th>
+                <th>Role</th>
+                <th>Assigned Date</th>
+                <th>Report Status</th>
+                <th>Invoice Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for assignment in assignments %}
+            <tr>
+                <td>
+                    <strong>{{ assignment.team_member.user.get_full_name }}</strong>
+                </td>
+                <td>
+                    {{ assignment.team_member.user.email }}<br>
+                    <small>{{ assignment.team_member.phone }}</small>
+                </td>
+                <td>
+                    {% if assignment.is_team_lead %}
+                        <span class="status-badge role-lead">
+                            <i class="fas fa-star mr-1"></i> Team Lead
+                        </span>
+                    {% else %}
+                        <span class="status-badge role-member">
+                            <i class="fas fa-user mr-1"></i> Member
+                        </span>
+                    {% endif %}
+                </td>
+                <td>{{ assignment.assigned_at|date:"M d, Y H:i" }}</td>
+                <td>
+                    {% with report=assignment.report %}
+                        {% if report %}
+                            <span class="status-badge status-{{ report.status }}">
+                                {{ report.get_status_display }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">Not submitted</span>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                <td>
+                    {% with invoice=assignment.invoices.first %}
+                        {% if invoice %}
+                            <span class="status-badge status-{{ invoice.status }}">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">Not created</span>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                <td>
+                    <div class="btn-group">
+                        <a href="{% url 'admin:events_eventassignment_change' assignment.id %}" 
+                           class="action-button action-button-info btn-sm">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'admin:teams_teammember_change' assignment.team_member.id %}" 
+                           class="action-button action-button-success btn-sm">
+                            <i class="fas fa-user"></i>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center py-5">
+                    <i class="fas fa-user-plus fa-3x text-muted mb-3"></i>
+                    <h5>No Team Members Assigned</h5>
+                    <p class="text-muted">Click below to add team members to this event</p>
+                    <a href="{% url 'admin:events_eventassignment_add' %}?event={{ event.id }}" 
+                       class="action-button action-button-success">
+                        <i class="fas fa-plus mr-2"></i> Add Team Member
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'admin:events_eventassignment_add' %}?event={{ event.id }}" 
+       class="action-button action-button-success">
+        <i class="fas fa-plus mr-2"></i> Add New Team Member
+    </a>
+</div>
+{% endblock %}
