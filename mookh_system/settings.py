@@ -1,12 +1,18 @@
 import os
 from pathlib import Path
 import dj_database_url
+from decouple import config
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'li3w(460q8x2tt!@0u1%!ecdk#)3u&iqu1yjksl@3aarkjpk!v'
 
-DEBUG = True
+SECRET_KEY = config('SECRET_KEY')
+
+
+DEBUG = config('DEBUG')
+
+
 
 ALLOWED_HOSTS = ['.onrender.com',
                  'localhost',
