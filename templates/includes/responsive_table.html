@@ -1,0 +1,89 @@
+{% comment %}
+Usage: 
+{% include "includes/responsive_table.html" with 
+    headers=headers_list 
+    rows=rows_list 
+    empty_message="No data found"
+%}
+{% endcomment %}
+
+<div class="responsive-table-wrapper">
+    {% if rows %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    {% for header in headers %}
+                    <th>{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    {% for cell in row %}
+                    <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-inbox fs-1 text-muted"></i>
+        <p class="text-muted mt-2">{{ empty_message|default:"No data available" }}</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.responsive-table-wrapper {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+    }
+    
+    .table thead {
+        display: none;
+    }
+    
+    .table tbody tr {
+        display: block;
+        border: 1px solid #dee2e6;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        background: white;
+    }
+    
+    .table tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border: none;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .table tbody td:last-child {
+        border-bottom: none;
+    }
+    
+    .table tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        margin-right: 1rem;
+        color: var(--mookh-primary);
+    }
+    
+    /* Style for action buttons */
+    .table tbody td .btn-group {
+        margin-left: auto;
+    }
+}
+</style>
