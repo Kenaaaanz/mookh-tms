@@ -72,6 +72,10 @@ urlpatterns = [
     # Reports - AJAX Endpoints
     path('api/reports/<int:report_id>/notes/', invoice_views.report_review_notes, name='report_review_notes'),
     path('api/reports/<int:report_id>/timeline/', invoice_views.report_timeline, name='report_timeline'),
+
+    path('invoices/<int:invoice_id>/preview/', invoice_views.preview_invoice, name='preview_invoice'),
+    path('reports/<int:report_id>/preview/', invoice_views.preview_report, name='preview_report'),
+    
     
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

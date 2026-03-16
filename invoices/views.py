@@ -367,3 +367,34 @@ def report_timeline(request, report_id):
         })
     
     return JsonResponse({'timeline': timeline})
+
+@login_required
+def preview_invoice(request, invoice_id):
+    """Preview invoice in browser without downloading"""
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    
+    # Check authorization
+    if not (request.user.is_staff or invoice.event_assignment.team_member.user == request.user):
+        messages.error(request, 'You are not authorized to view this invoice.')
+        return redirect('dashboard')
+    
+    buffer = generate_invoice_pdf(invoice)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="invoice_{invoice.id}.pdf"'
+    return response
+
+
+@login_required
+def preview_report(request, report_id):
+    """Preview report in browser without downloading"""
+    report = get_object_or_404(EventReport, id=report_id)
+    
+    # Check authorization
+    if not (request.user.is_staff or report.event_assignment.team_member.user == request.user):
+        messages.error(request, 'You are not authorized to view this report.')
+        return redirect('dashboard')
+    
+    buffer = generate_report_pdf(report)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="report_{report.id}.pdf"'
+    return response

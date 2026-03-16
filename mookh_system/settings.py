@@ -7,10 +7,10 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config('SECRET_KEY', default='li3w(460q8x2tt!@0u1%!ecdk#)3u&iqu1yjksl@3aarkjpk!v')
 
 
-DEBUG = config('DEBUG', default=False)
+DEBUG = config('DEBUG', default=True)
 
 
 ALLOWED_HOSTS = ['.onrender.com',
@@ -70,31 +70,31 @@ WSGI_APPLICATION = 'mookh_system.wsgi.application'
     #}
 #}
 
-#DATABASES = {
- #   'default': {
-  #      'ENGINE': 'django.db.backends.sqlite3',
-   #     'NAME': BASE_DIR / 'db.sqlite3',
-    #    "ENGINE": "django.db.backends.postgresql",
-     #   "NAME": "mookh_tms",
-      #  "USER": "postgres",
-       # "PASSWORD": "Ken@4427",
-        #"HOST": "localhost",
-        #"PORT": "5432",
-   #}
-#}
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "mookh_tms",
+        "USER": "postgres",
+        "PASSWORD": "Ken@4427",
+        "HOST": "localhost",
+        "PORT": "5432",
+   }
+}
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
+#DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if DATABASE_URL:
+#if DATABASE_URL:
     #Production - PostgreSQL on Render
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
-            ssl_require=True  # Important for Render
-        )
-    }
+   # DATABASES = {
+       # 'default': dj_database_url.config(
+          #  default=DATABASE_URL,
+         #   conn_max_age=600,
+        #    conn_health_checks=True,
+       #     ssl_require=True  # Important for Render
+      #  )
+    #}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -140,7 +140,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 if not DEBUG:
     #Security settings
     SECURE_SSL_REDIRECT = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https', 'http')
     
 # Static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

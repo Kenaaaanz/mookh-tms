@@ -1,118 +1,187 @@
 from io import BytesIO
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.lib.units import inch, mm
-from reportlab.lib.colors import HexColor, black, white
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm, inch
+from reportlab.lib.colors import HexColor, black, white, grey
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
-from django.http import HttpResponse
 from django.utils import timezone
+import os
+from django.conf import settings
 
 def generate_invoice_pdf(invoice):
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    doc = SimpleDocTemplate(
+        buffer, 
+        pagesize=A4,
+        rightMargin=20*mm,
+        leftMargin=20*mm,
+        topMargin=20*mm,
+        bottomMargin=20*mm
+    )
+    
     styles = getSampleStyleSheet()
+    story = []
     
     # Custom styles
     title_style = ParagraphStyle(
-        'TitleStyle',
+        'CustomTitle',
         parent=styles['Heading1'],
         fontSize=24,
         textColor=HexColor('#1E3A8A'),
-        alignment=TA_LEFT,
-        spaceAfter=12
+        spaceAfter=6,
+        alignment=TA_LEFT
     )
     
-    heading_style = ParagraphStyle(
-        'HeadingStyle',
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=HexColor('#64748B'),
+        spaceAfter=20,
+        alignment=TA_LEFT
+    )
+    
+    section_style = ParagraphStyle(
+        'Section',
         parent=styles['Heading2'],
         fontSize=14,
-        textColor=HexColor('#3B82F6'),
+        textColor=HexColor('#1E3A8A'),
+        spaceBefore=15,
+        spaceAfter=10,
         alignment=TA_LEFT,
-        spaceAfter=6
+        borderWidth=0,
+        borderColor=HexColor('#E2E8F0'),
+        borderPadding=(0, 0, 4, 0),
+        borderRadius=0
     )
     
     normal_style = ParagraphStyle(
-        'NormalStyle',
+        'Normal',
         parent=styles['Normal'],
         fontSize=10,
-        leading=14
+        textColor=HexColor('#334155'),
+        leading=14,
+        alignment=TA_LEFT
     )
     
-    # Content
-    content = []
+    small_style = ParagraphStyle(
+        'Small',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=HexColor('#64748B'),
+        leading=12,
+        alignment=TA_LEFT
+    )
     
-    # Header with Mookh Logo
-    header_text = f"""
-    <font size="24" color="#1E3A8A"><b>MOOKH</b></font><br/>
-    <font size="12" color="#3B82F6">Ticket Validation System</font><br/>
-    <font size="10">123 Business Street, Nairobi, Kenya</font><br/>
-    <font size="10">contact@mookh.com | www.mookh.com</font>
-    """
-    content.append(Paragraph(header_text, title_style))
-    content.append(Spacer(1, 20))
+    header_style = ParagraphStyle(
+        'Header',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=white,
+        alignment=TA_LEFT,
+        fontName='Helvetica-Bold'
+    )
     
-    # Invoice Title
-    invoice_title = f"<font size='18' color='#1E3A8A'><b>INVOICE #{invoice.id:06d}</b></font>"
-    content.append(Paragraph(invoice_title, title_style))
-    content.append(Spacer(1, 20))
+    # Header with Logo
+    story.append(Paragraph("MOOKH", title_style))
+    story.append(Paragraph("Ticket Validation System", subtitle_style))
+    story.append(Spacer(1, 10*mm))
     
-    # Bill To and Invoice Details Table
+    # Invoice Title with Background
+    invoice_title_data = [[
+        Paragraph(f'<font size="16" color="#FFFFFF"><b>INVOICE #{invoice.id:06d}</b></font>', header_style)
+    ]]
+    invoice_title_table = Table(invoice_title_data, colWidths=[doc.width])
+    invoice_title_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), HexColor('#1E3A8A')),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING', (0, 0), (-1, -1), 10),
+    ]))
+    story.append(invoice_title_table)
+    story.append(Spacer(1, 5*mm))
+    
+    # Invoice Date and Status
+    date_status_data = [
+        [f'Date: {invoice.invoice_date.strftime("%B %d, %Y")}', f'Status: {invoice.get_status_display()}'],
+        [f'Due Date: {invoice.due_date.strftime("%B %d, %Y")}', f'Payment Method: {invoice.get_payment_method_display()}'],
+    ]
+    date_status_table = Table(date_status_data, colWidths=[doc.width/2 - 10, doc.width/2 - 10])
+    date_status_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TEXTCOLOR', (0, 0), (-1, -1), HexColor('#334155')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    story.append(date_status_table)
+    story.append(Spacer(1, 5*mm))
+    
+    # Bill To Section
+    story.append(Paragraph("BILL TO", section_style))
+    
+    # Create bill to table
     bill_to_data = [
-        ['<b>Bill To:</b>', '<b>Invoice Details:</b>'],
-        [invoice.event_assignment.team_member.user.get_full_name(), f'<b>Invoice Date:</b> {invoice.invoice_date.strftime("%B %d, %Y") if invoice.invoice_date else "N/A"}'],
-        [invoice.event_assignment.team_member.user.email, f'<b>Due Date:</b> {invoice.due_date.strftime("%B %d, %Y") if invoice.due_date else "N/A"}'],
-        [f'M-Pesa: {invoice.event_assignment.team_member.mpesa_number}', f'<b>Status:</b> {invoice.get_status_display()}'],
-        ['', f'<b>Payment Method:</b> {invoice.get_payment_method_display()}']
+        ['Company:', 'Mookh Events'],
+        ['Attention:', invoice.event_assignment.team_member.user.get_full_name()],
+        ['Email:', invoice.event_assignment.team_member.user.email],
+        ['Phone:', invoice.event_assignment.team_member.phone],
     ]
     
-    # Add M-Pesa transaction info if available
-    if invoice.mpesa_transaction_id:
-        bill_to_data.append(['', f'<b>M-Pesa Transaction ID:</b> {invoice.mpesa_transaction_id}'])
-    if invoice.mpesa_confirmation_code:
-        bill_to_data.append(['', f'<b>M-Pesa Confirmation:</b> {invoice.mpesa_confirmation_code}'])
+    # Add M-Pesa number if different from phone
+    if invoice.event_assignment.team_member.mpesa_number != invoice.event_assignment.team_member.phone:
+        bill_to_data.append(['M-Pesa:', invoice.event_assignment.team_member.mpesa_number])
     
-    bill_to_table = Table(bill_to_data, colWidths=[2.5*inch, 2.5*inch])
+    bill_to_table = Table(bill_to_data, colWidths=[doc.width/4, doc.width*3/4 - 20])
     bill_to_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('TEXTCOLOR', (0, 0), (-1, -1), black),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TEXTCOLOR', (0, 0), (-1, -1), HexColor('#334155')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
     ]))
-    content.append(bill_to_table)
-    content.append(Spacer(1, 20))
+    story.append(bill_to_table)
+    story.append(Spacer(1, 5*mm))
     
     # Event Details
-    event_heading = Paragraph("<b>Event Details:</b>", heading_style)
-    content.append(event_heading)
+    story.append(Paragraph("EVENT DETAILS", section_style))
     
     event_data = [
-        f"<b>Event:</b> {invoice.event_assignment.event.name}",
-        f"<b>Location:</b> {invoice.event_assignment.event.location}",
-        f"<b>Dates:</b> {invoice.event_assignment.event.start_date.strftime('%B %d, %Y') if invoice.event_assignment.event.start_date else 'N/A'} to {invoice.event_assignment.event.end_date.strftime('%B %d, %Y') if invoice.event_assignment.event.end_date else 'N/A'}",
-        f"<b>Role:</b> {'Team Lead' if invoice.event_assignment.is_team_lead else 'Team Member'}"
+        ['Event:', invoice.event_assignment.event.name],
+        ['Location:', invoice.event_assignment.event.location],
+        ['Dates:', f'{invoice.event_assignment.event.start_date.strftime("%B %d, %Y")} - {invoice.event_assignment.event.end_date.strftime("%B %d, %Y")}'],
+        ['Role:', 'Team Lead' if invoice.event_assignment.is_team_lead else 'Team Member'],
     ]
     
-    for item in event_data:
-        content.append(Paragraph(item, normal_style))
+    event_table = Table(event_data, colWidths=[doc.width/4, doc.width*3/4 - 20])
+    event_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TEXTCOLOR', (0, 0), (-1, -1), HexColor('#334155')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    story.append(event_table)
+    story.append(Spacer(1, 5*mm))
     
-    content.append(Spacer(1, 20))
-    
-    # Invoice Items Table (UPDATED for shift rate)
-    items_heading = Paragraph("<b>Invoice Items:</b>", heading_style)
-    content.append(items_heading)
+    # Invoice Items
+    story.append(Paragraph("INVOICE ITEMS", section_style))
     
     items_data = [
-        ['<b>Description</b>', '<b>Days</b>', '<b>shift Rate</b>', '<b>Amount (KSh)</b>'],
-        ['Event Ticket Validation Services', 
-         f"{invoice.number_of_days}", 
-         f"{invoice.shift_rate:,.2f}", 
-         f"{invoice.total_amount:,.2f}"]
+        ['Description', 'Days', 'Rate (KSh)', 'Amount (KSh)'],
+        [
+            'Event Ticket Validation Services',
+            str(invoice.number_of_days),
+            f"{invoice.shift_rate:,.2f}",
+            f"{invoice.total_amount:,.2f}"
+        ]
     ]
     
-    items_table = Table(items_data, colWidths=[3*inch, 1*inch, 1.5*inch, 1.5*inch])
+    items_table = Table(items_data, colWidths=[doc.width*0.4, doc.width*0.15, doc.width*0.2, doc.width*0.2])
     items_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), HexColor('#1E3A8A')),
         ('TEXTCOLOR', (0, 0), (-1, 0), white),
@@ -121,163 +190,346 @@ def generate_invoice_pdf(invoice):
         ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
         ('TOPPADDING', (0, 0), (-1, 0), 8),
-        ('GRID', (0, 0), (-1, -1), 1, black),
+        ('GRID', (0, 0), (-1, -1), 1, HexColor('#E2E8F0')),
+        ('BACKGROUND', (0, 1), (-1, -1), HexColor('#F8FAFC')),
     ]))
-    content.append(items_table)
-    content.append(Spacer(1, 20))
+    story.append(items_table)
+    story.append(Spacer(1, 5*mm))
     
-    # Total Amount
-    total_data = [
-        ['', '', '<b>Subtotal:</b>', f"KSh {invoice.total_amount:,.2f}"],
-        ['', '', '<b>Tax (0%):</b>', 'KSh 0.00'],
-        ['', '', '<b>Total:</b>', f"<font size='12'><b>KSh {invoice.total_amount:,.2f}</b></font>"]
+    # Summary Section
+    summary_data = [
+        ['Subtotal:', f'KSh {invoice.total_amount:,.2f}'],
+        ['Tax (0%):', 'KSh 0.00'],
+        ['Total:', f'KSh {invoice.total_amount:,.2f}'],
     ]
     
-    total_table = Table(total_data, colWidths=[3*inch, 1*inch, 1.5*inch, 1.5*inch])
-    total_table.setStyle(TableStyle([
+    summary_table = Table(summary_data, colWidths=[doc.width*0.7, doc.width*0.2])
+    summary_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('FONTNAME', (2, 2), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (2, 2), (-1, -1), 12),
+        ('TEXTCOLOR', (2, 2), (-1, -1), HexColor('#1E3A8A')),
     ]))
-    content.append(total_table)
-    content.append(Spacer(1, 20))
+    story.append(summary_table)
+    story.append(Spacer(1, 10*mm))
     
-    # M-Pesa Payment Instructions
-    content.append(Spacer(1, 15))
-    payment_instructions = Paragraph("<b>M-Pesa Payment Instructions:</b>", heading_style)
-    content.append(payment_instructions)
+    # Payment Instructions
+    story.append(Paragraph("PAYMENT INSTRUCTIONS", section_style))
     
-    instructions = [
-        "1. Go to M-Pesa on your phone",
-        "2. Select 'Lipa na M-Pesa'",
-        "3. Select 'Pay Bill'",
-        "4. Enter Business Number: 123456",
-        f"5. Enter Account Number: {invoice.id:06d}",
-        f"6. Enter Amount: KSh {invoice.total_amount:,.2f}",
-        "7. Enter your M-Pesa PIN and confirm",
-        "8. You will receive an SMS confirmation"
+    payment_instructions = [
+        ['1.', 'Create your invoice after the event'],
+        ['2.', 'Submit the Invoice in time'],
+        ['3.', f'Be sure to review all your details keenly before submitting the invoice.'],
+        ['4.', 'Payment will be made within 2-5 days of invoice submission.'],
+        ['5.', 'If you have any questions regarding this invoice, please contact the Team Manager or email support@mookh.com'],
     ]
     
-    for instruction in instructions:
-        content.append(Paragraph(instruction, normal_style))
+    payment_table = Table(payment_instructions, colWidths=[doc.width*0.1, doc.width*0.8])
+    payment_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('TEXTCOLOR', (0, 0), (-1, -1), HexColor('#334155')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (1, 0), (-1, -1), 0),
+    ]))
+    story.append(payment_table)
+    story.append(Spacer(1, 5*mm))
     
-    content.append(Spacer(1, 20))
+    # Additional Notes (if any)
+    if invoice.additional_notes:
+        story.append(Paragraph("ADDITIONAL NOTES", section_style))
+        notes_style = ParagraphStyle(
+            'Notes',
+            parent=normal_style,
+            backColor=HexColor('#FEF9C3'),
+            borderWidth=1,
+            borderColor=HexColor('#FDE68A'),
+            borderPadding=10,
+            borderRadius=5,
+            textColor=HexColor('#92400E')
+        )
+        story.append(Paragraph(invoice.additional_notes, notes_style))
+        story.append(Spacer(1, 5*mm))
     
     # Footer
-    footer_text = """
-    <font size="9" color="#666666">
-    <b>Terms & Conditions:</b><br/>
-    1. Payment is due within 30 days of invoice date.<br/>
-    2. Late payments may be subject to late fees.<br/>
-    3. All amounts are in Kenyan Shillings (KSh).<br/>
-    4. For any queries, contact finance@mookh.com<br/><br/>
-    Thank you for your excellent service!
-    </font>
+    story.append(Spacer(1, 15*mm))
+    
+    footer_text = f"""
+    <para>
+        <font color="#64748B" size="8">
+        <b>Terms & Conditions:</b><br/>
+        Payment is due within 30 days. Late payments may be subject to late fees.<br/>
+        For questions regarding this invoice, please contact accounts@mookh.com<br/><br/>
+        Thank you for your excellent service!<br/>
+        Generated on {timezone.now().strftime('%B %d, %Y at %H:%M')}
+        </font>
+    </para>
     """
-    content.append(Paragraph(footer_text, normal_style))
+    story.append(Paragraph(footer_text, small_style))
     
     # Build PDF
-    doc.build(content)
+    doc.build(story)
     buffer.seek(0)
     return buffer
 
 def generate_report_pdf(report):
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    doc = SimpleDocTemplate(
+        buffer, 
+        pagesize=A4,
+        rightMargin=20*mm,
+        leftMargin=20*mm,
+        topMargin=20*mm,
+        bottomMargin=20*mm
+    )
+    
     styles = getSampleStyleSheet()
+    story = []
     
     # Custom styles
     title_style = ParagraphStyle(
-        'ReportTitle',
+        'CustomTitle',
         parent=styles['Heading1'],
-        fontSize=20,
-        textColor=HexColor('#1E3A8A'),
-        alignment=TA_CENTER,
-        spaceAfter=12
+        fontSize=24,
+        textColor=HexColor('#8B5CF6'),
+        spaceAfter=6,
+        alignment=TA_LEFT
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=HexColor('#64748B'),
+        spaceAfter=20,
+        alignment=TA_LEFT
     )
     
     section_style = ParagraphStyle(
-        'SectionStyle',
+        'Section',
         parent=styles['Heading2'],
         fontSize=14,
-        textColor=HexColor('#3B82F6'),
-        spaceBefore=12,
-        spaceAfter=6
+        textColor=HexColor('#8B5CF6'),
+        spaceBefore=15,
+        spaceAfter=10,
+        alignment=TA_LEFT,
+        borderWidth=0,
+        borderColor=HexColor('#E2E8F0'),
+        borderPadding=(0, 0, 4, 0),
+        borderRadius=0
     )
     
     normal_style = ParagraphStyle(
-        'ReportNormal',
+        'Normal',
         parent=styles['Normal'],
         fontSize=10,
-        leading=14
+        textColor=HexColor('#334155'),
+        leading=14,
+        alignment=TA_LEFT
     )
     
-    content = []
+    small_style = ParagraphStyle(
+        'Small',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=HexColor('#64748B'),
+        leading=12,
+        alignment=TA_LEFT
+    )
     
-    # Title
-    title = f"<b>Event Report</b><br/>"
-    title += f"<font size='14'>{report.event_assignment.event.name}</font><br/>"
-    title += f"<font size='12'>Submitted by: {report.event_assignment.team_member.user.get_full_name()}</font>"
-    content.append(Paragraph(title, title_style))
-    content.append(Spacer(1, 20))
+    header_style = ParagraphStyle(
+        'Header',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=white,
+        alignment=TA_LEFT,
+        fontName='Helvetica-Bold'
+    )
     
-    # Report Details Table
-    details_data = [
-        ['<b>Report ID:</b>', f"#{report.id:06d}", '<b>Submitted:</b>', report.submitted_at.strftime('%Y-%m-%d')],
-        ['<b>Event:</b>', report.event_assignment.event.name, '<b>Location:</b>', report.event_assignment.event.location],
-        ['<b>Team Member:</b>', report.event_assignment.team_member.user.get_full_name(), '<b>Role:</b>', 'Team Lead' if report.event_assignment.is_team_lead else 'Team Member'],
-        ['<b>Attendance Hours:</b>', f"{report.attendance_hours} hours", '<b>Report Status:</b>', f"<font color='{'#065F46' if report.status == 'approved' else '#92400E' if report.status == 'pending' else '#991B1B'}'>{report.get_status_display()}</font>"],
+    quote_style = ParagraphStyle(
+        'Quote',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=HexColor('#4B5563'),
+        alignment=TA_LEFT,
+        leftIndent=20,
+        rightIndent=20,
+        spaceBefore=10,
+        spaceAfter=10,
+        fontName='Helvetica-Oblique'
+    )
+    
+    # Header with Logo
+    story.append(Paragraph("MOOKH", title_style))
+    story.append(Paragraph("Event Report", subtitle_style))
+    story.append(Spacer(1, 10*mm))
+    
+    # Report Title with Background
+    report_title_data = [[
+        Paragraph(f'<font size="16" color="#FFFFFF"><b>EVENT REPORT #{report.id:06d}</b></font>', header_style)
+    ]]
+    report_title_table = Table(report_title_data, colWidths=[doc.width])
+    report_title_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), HexColor('#8B5CF6')),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING', (0, 0), (-1, -1), 10),
+    ]))
+    story.append(report_title_table)
+    story.append(Spacer(1, 5*mm))
+    
+    # Report Metadata
+    meta_data = [
+        ['Submitted By:', report.event_assignment.team_member.user.get_full_name()],
+        ['Submitted On:', report.submitted_at.strftime('%B %d, %Y at %H:%M')],
+        ['Status:', report.get_status_display()],
     ]
     
-    details_table = Table(details_data, colWidths=[1.2*inch, 2*inch, 1.2*inch, 2*inch])
-    details_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
+    if report.reviewed_by:
+        meta_data.append(['Reviewed By:', report.reviewed_by.get_full_name()])
+        meta_data.append(['Reviewed On:', report.reviewed_at.strftime('%B %d, %Y at %H:%M')])
+    
+    meta_table = Table(meta_data, colWidths=[doc.width*0.2, doc.width*0.7])
+    meta_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TEXTCOLOR', (0, 0), (-1, -1), HexColor('#334155')),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('LEFTPADDING', (0, 0), (-1, -1), 4),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
     ]))
-    content.append(details_table)
-    content.append(Spacer(1, 20))
+    story.append(meta_table)
+    story.append(Spacer(1, 5*mm))
+    
+    # Status Badge
+    status_color = {
+        'pending': '#F59E0B',
+        'approved': '#10B981',
+        'rejected': '#EF4444'
+    }.get(report.status, '#6B7280')
+    
+    status_data = [[
+        Paragraph(
+            f'<font color="{status_color}" size="10"><b>● {report.get_status_display().upper()}</b></font>',
+            normal_style
+        )
+    ]]
+    status_table = Table(status_data, colWidths=[doc.width])
+    status_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('BACKGROUND', (0, 0), (-1, -1), HexColor('#F8FAFC')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    story.append(status_table)
+    story.append(Spacer(1, 5*mm))
+    
+    # Event Details
+    story.append(Paragraph("EVENT INFORMATION", section_style))
+    
+    event_data = [
+        ['Event Name:', report.event_assignment.event.name],
+        ['Location:', report.event_assignment.event.location],
+        ['Event Dates:', f'{report.event_assignment.event.start_date.strftime("%B %d, %Y")} - {report.event_assignment.event.end_date.strftime("%B %d, %Y")}'],
+        ['Attendance Hours:', f'{report.attendance_hours} hours'],
+        ['Role:', 'Team Lead' if report.event_assignment.is_team_lead else 'Team Member'],
+    ]
+    
+    event_table = Table(event_data, colWidths=[doc.width*0.25, doc.width*0.65])
+    event_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TEXTCOLOR', (0, 0), (-1, -1), HexColor('#334155')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, HexColor('#E2E8F0')),
+        ('BACKGROUND', (0, 0), (-1, 0), HexColor('#F8FAFC')),
+    ]))
+    story.append(event_table)
+    story.append(Spacer(1, 5*mm))
     
     # Work Summary
-    content.append(Paragraph("<b>Work Summary</b>", section_style))
-    content.append(Paragraph(report.work_summary, normal_style))
-    content.append(Spacer(1, 12))
+    story.append(Paragraph("WORK SUMMARY", section_style))
+    story.append(Paragraph(report.work_summary.replace('\n', '<br/>'), normal_style))
+    story.append(Spacer(1, 5*mm))
     
     # Challenges Faced
     if report.challenges_faced:
-        content.append(Paragraph("<b>Challenges Faced</b>", section_style))
-        content.append(Paragraph(report.challenges_faced, normal_style))
-        content.append(Spacer(1, 12))
+        story.append(Paragraph("CHALLENGES FACED", section_style))
+        story.append(Paragraph(report.challenges_faced.replace('\n', '<br/>'), normal_style))
+        story.append(Spacer(1, 5*mm))
     
     # Suggestions
     if report.suggestions:
-        content.append(Paragraph("<b>Suggestions for Improvement</b>", section_style))
-        content.append(Paragraph(report.suggestions, normal_style))
-        content.append(Spacer(1, 12))
+        story.append(Paragraph("SUGGESTIONS FOR IMPROVEMENT", section_style))
+        story.append(Paragraph(report.suggestions.replace('\n', '<br/>'), normal_style))
+        story.append(Spacer(1, 5*mm))
     
-    # Review Section (if reviewed)
+    # Review Information
     if report.reviewed_by:
-        content.append(Paragraph("<b>Review Details</b>", section_style))
+        story.append(Paragraph("REVIEW INFORMATION", section_style))
+        
         review_data = [
-            f"<b>Reviewed by:</b> {report.reviewed_by.get_full_name()}",
-            f"<b>Review date:</b> {report.reviewed_at.strftime('%Y-%m-%d %H:%M')}",
-            f"<b>Review notes:</b> {report.review_notes if report.review_notes else 'No additional notes.'}"
+            ['Reviewed By:', report.reviewed_by.get_full_name()],
+            ['Review Date:', report.reviewed_at.strftime('%B %d, %Y at %H:%M')],
         ]
         
-        for item in review_data:
-            content.append(Paragraph(item, normal_style))
+        if report.review_notes:
+            review_data.append(['Review Notes:', report.review_notes])
+        
+        review_table = Table(review_data, colWidths=[doc.width*0.2, doc.width*0.7])
+        review_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TEXTCOLOR', (0, 0), (-1, -1), HexColor('#334155')),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        story.append(review_table)
+        story.append(Spacer(1, 5*mm))
+    
+    # Team Member Information
+    story.append(Paragraph("TEAM MEMBER INFORMATION", section_style))
+    
+    member_data = [
+        ['Name:', report.event_assignment.team_member.user.get_full_name()],
+        ['Email:', report.event_assignment.team_member.user.email],
+        ['Phone:', report.event_assignment.team_member.phone],
+        ['M-Pesa Number:', report.event_assignment.team_member.mpesa_number],
+        ['ID Number:', report.event_assignment.team_member.id_number or 'Not provided'],
+    ]
+    
+    member_table = Table(member_data, colWidths=[doc.width*0.25, doc.width*0.65])
+    member_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('TEXTCOLOR', (0, 0), (-1, -1), HexColor('#334155')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('GRID', (0, 0), (-1, -1), 1, HexColor('#E2E8F0')),
+    ]))
+    story.append(member_table)
+    story.append(Spacer(1, 10*mm))
     
     # Footer
-    content.append(Spacer(1, 30))
-    footer = Paragraph(
-        f"<font size='8' color='#666666'>Generated by Mookh Ticket Validation System on {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}</font>",
-        ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=HexColor('#666666'), alignment=TA_CENTER)
-    )
-    content.append(footer)
+    footer_text = f"""
+    <para>
+        <font color="#64748B" size="8">
+        This report has been automatically generated by the Mookh Ticket Validation System.<br/>
+        For verification, please contact admin@mookh.com<br/><br/>
+        Generated on {timezone.now().strftime('%B %d, %Y at %H:%M')}
+        </font>
+    </para>
+    """
+    story.append(Paragraph(footer_text, small_style))
     
     # Build PDF
-    doc.build(content)
+    doc.build(story)
     buffer.seek(0)
     return buffer

@@ -84,6 +84,9 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
+                                        <a href="{% url 'preview_report' report.id %}" class="btn btn-sm btn-outline-info" title="Preview" target="_blank">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
                                         <a href="{% url 'download_report' report.id %}" class="btn btn-sm btn-outline-primary" title="Download PDF">
                                             <i class="bi bi-download"></i>
                                         </a>
