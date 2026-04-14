@@ -14,8 +14,8 @@ DEBUG = config('DEBUG', default=True)
 
 
 ALLOWED_HOSTS = ['.onrender.com',
-                 'localhost',
-                 '127.0.0.1']
+                'localhost',
+                '127.0.0.1']
 
 INSTALLED_APPS = [
     'jazzmin',
