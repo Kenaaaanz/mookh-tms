@@ -230,6 +230,62 @@
             .logo-sub {
                 font-size: 11px;
             }
+
+            /* Auto-collapse sidebar on mobile */
+            body.hold-transition.sidebar-mini .main-sidebar {
+                transform: translateX(-260px);
+                transition: transform 0.3s ease-in-out;
+            }
+
+            body.hold-transition.sidebar-mini.sidebar-open .main-sidebar {
+                transform: translateX(0);
+            }
+
+            .content-wrapper {
+                margin-left: 0 !important;
+                transition: margin-left 0.3s ease-in-out;
+            }
+
+            body.hold-transition.sidebar-mini.sidebar-open .content-wrapper {
+                margin-left: 260px;
+            }
+
+            /* Mobile hamburger button visible */
+            .navbar-toggler-icon::before,
+            .navbar-toggler-icon::after {
+                content: '';
+                display: block;
+                width: 20px;
+                height: 2px;
+                background-color: white;
+                margin: 5px 0;
+                transition: 0.3s;
+            }
+        }
+
+        /* Medium screens: auto-collapse at 992px */
+        @media (max-width: 1024px) {
+            .main-sidebar {
+                width: 260px;
+            }
+
+            body.sidebar-mini .main-sidebar {
+                width: 70px;
+            }
+
+            body.sidebar-mini .main-sidebar .brand-link {
+                padding: 0.5rem 0;
+                text-align: center;
+            }
+
+            body.sidebar-mini .brand-link .logo-text {
+                display: none;
+            }
+
+            body.sidebar-mini .brand-link .logo-image {
+                height: 35px;
+                margin: 0 auto;
+            }
         }
 
         /* Dark Mode Support */
@@ -647,6 +703,85 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
         });
     });
+
+    // ==========================================
+    // Responsive Sidebar Hamburger Menu
+    // ==========================================
+    const body = document.querySelector('body');
+    const sidebar = document.querySelector('.main-sidebar');
+    const pushMenuBtn = document.querySelector('[data-widget="pushmenu"]');
+    let isMobileView = window.innerWidth < 768;
+
+    // Function to handle responsive behavior
+    function handleResponsive() {
+        const wasSmall = isMobileView;
+        isMobileView = window.innerWidth < 768;
+
+        if (isMobileView && !wasSmall) {
+            // Switched to mobile view
+            body.classList.add('sidebar-mini');
+            body.classList.remove('sidebar-open');
+        } else if (!isMobileView && wasSmall) {
+            // Switched to desktop view
+            body.classList.remove('sidebar-mini');
+            body.classList.remove('sidebar-open');
+        }
+    }
+
+    // Initial setup for mobile
+    if (isMobileView) {
+        body.classList.add('sidebar-mini');
+    }
+
+    // Handle push menu button click
+    if (pushMenuBtn) {
+        pushMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (isMobileView) {
+                body.classList.toggle('sidebar-open');
+            }
+        });
+    }
+
+    // Close sidebar when clicking on a link in mobile view
+    const sidebarLinks = document.querySelectorAll('.nav-sidebar a');
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (isMobileView && body.classList.contains('sidebar-open')) {
+                body.classList.remove('sidebar-open');
+            }
+        });
+    });
+
+    // Close sidebar when clicking outside of it on mobile
+    document.addEventListener('click', function(e) {
+        if (isMobileView && body.classList.contains('sidebar-open')) {
+            const isClickInsideSidebar = sidebar.contains(e.target);
+            const isClickOnToggle = pushMenuBtn && pushMenuBtn.contains(e.target);
+            
+            if (!isClickInsideSidebar && !isClickOnToggle) {
+                body.classList.remove('sidebar-open');
+            }
+        }
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        handleResponsive();
+    });
+
+    // Prevent body scroll when sidebar is open on mobile
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (isMobileView && body.classList.contains('sidebar-open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+        });
+    });
+
+    observer.observe(body, { attributes: true, attributeFilter: ['class'] });
 });
 </script>
 
