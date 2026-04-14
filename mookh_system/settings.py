@@ -13,9 +13,7 @@ SECRET_KEY = config('SECRET_KEY', default='li3w(460q8x2tt!@0u1%!ecdk#)3u&iqu1yjk
 DEBUG = config('DEBUG', default=True)
 
 
-ALLOWED_HOSTS = ['.onrender.com',
-                 'localhost',
-                 '127.0.0.1']
+ALLOWED_HOSTS = ['.onrender.com']
 
 INSTALLED_APPS = [
     'jazzmin',
