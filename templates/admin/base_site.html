@@ -27,6 +27,75 @@
             --mookh-dark: #1E293B;
         }
 
+        /* ==================== NAVBAR STYLES ==================== */
+        .mookh-navbar {
+            background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%) !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+            padding: 0.5rem 1rem !important;
+            min-height: 60px !important;
+            border: none !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+        }
+
+        .mookh-navbar .navbar-nav {
+            display: flex !important;
+            gap: 0 !important;
+            flex-wrap: wrap !important;
+        }
+
+        .mookh-navbar .nav-item {
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .mookh-navbar .nav-link {
+            color: white !important;
+            padding: 0.5rem 1rem !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            white-space: nowrap !important;
+            font-size: 0.875rem !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .mookh-navbar .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-radius: 4px !important;
+            color: white !important;
+        }
+
+        .mookh-navbar .dropdown-menu {
+            background: white !important;
+            border: 1px solid #e0e0e0 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            min-width: 250px !important;
+        }
+
+        .mookh-navbar .dropdown-item {
+            color: #333 !important;
+            padding: 0.75rem 1rem !important;
+            border: none !important;
+        }
+
+        .mookh-navbar .dropdown-item:hover {
+            background: #f5f5f5 !important;
+            color: var(--mookh-primary) !important;
+        }
+
+        .mookh-navbar .dropdown-header {
+            color: var(--mookh-primary) !important;
+            font-weight: 600 !important;
+            padding: 0.5rem 1rem !important;
+        }
+
+        .mookh-navbar .ml-auto {
+            margin-left: auto !important;
+        }
+
         /* Jazzmin Theme Customization */
         .jazzmin .main-header {
             background: linear-gradient(135deg, var(--mookh-primary) 0%, #1E40AF 100%);
