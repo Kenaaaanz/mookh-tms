@@ -13,7 +13,9 @@ SECRET_KEY = config('SECRET_KEY', default='li3w(460q8x2tt!@0u1%!ecdk#)3u&iqu1yjk
 DEBUG = config('DEBUG', default=True)
 
 
-ALLOWED_HOSTS = ['.onrender.com']
+ALLOWED_HOSTS = ['.onrender.com',
+                localhost,
+                127.0.0.1]
 
 INSTALLED_APPS = [
     'jazzmin',
@@ -68,31 +70,31 @@ WSGI_APPLICATION = 'mookh_system.wsgi.application'
     #}
 #}
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "mookh_tms",
-        "USER": "postgres",
-        "PASSWORD": "Ken@4427",
-        "HOST": "localhost",
-        "PORT": "5432",
-   }
-}
+#DATABASES = {
+    #'default': {
+        #'ENGINE': 'django.db.backends.sqlite3',
+        #'NAME': BASE_DIR / 'db.sqlite3',
+        #"ENGINE": "django.db.backends.postgresql",
+        #"NAME": "mookh_tms",
+        #"USER": "postgres",
+        #"PASSWORD": "Ken@4427",
+        #"HOST": "localhost",
+        #"PORT": "5432",
+   #}
+#}
 
-#DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-#if DATABASE_URL:
-    #Production - PostgreSQL on Render
-   # DATABASES = {
-       # 'default': dj_database_url.config(
-          #  default=DATABASE_URL,
-         #   conn_max_age=600,
-        #    conn_health_checks=True,
-       #     ssl_require=True  # Important for Render
-      #  )
-    #}
+if DATABASE_URL:
+    Production - PostgreSQL on Render
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True  # Important for Render
+        )
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
