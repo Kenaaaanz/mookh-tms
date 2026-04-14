@@ -1,0 +1,42 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .page-header { background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%); border-radius: 12px; padding: 1.5rem; color: white; margin-bottom: 2rem; }
+    .detail-card { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
+    .detail-row { display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb; }
+    .detail-row:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 mb-2"><i class="fas fa-receipt mr-2"></i>Invoice Details</h1>
+            <p class="mb-0">Invoice #{{ invoice.id }} for <strong>{{ invoice.event_assignment.team_member.user.get_full_name }}</strong>.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'admin:invoices_invoice_changelist' %}" class="btn btn-light">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Invoices
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="detail-card">
+    <div class="detail-row"><strong>Status</strong><span>{{ invoice.get_status_display }}</span></div>
+    <div class="detail-row"><strong>Total Amount</strong><span>KSh {{ invoice.total_amount }}</span></div>
+    <div class="detail-row"><strong>Payment Method</strong><span>{{ invoice.get_payment_method_display }}</span></div>
+    <div class="detail-row"><strong>Invoice Date</strong><span>{{ invoice.invoice_date|date:"F d, Y" }}</span></div>
+    <div class="detail-row"><strong>Due Date</strong><span>{{ invoice.due_date|date:"F d, Y" }}</span></div>
+    <div class="detail-row"><strong>Shift Rate</strong><span>KSh {{ invoice.shift_rate }}</span></div>
+    <div class="detail-row"><strong>Number of Days</strong><span>{{ invoice.number_of_days }}</span></div>
+    <div class="detail-row"><strong>Event</strong><span>{{ invoice.event_assignment.event.name }}</span></div>
+    <div class="detail-row"><strong>Team Member</strong><span>{{ invoice.event_assignment.team_member.user.get_full_name }}</span></div>
+    <div class="detail-row"><strong>Invoice Notes</strong><span>{{ invoice.additional_notes|default:"None" }}</span></div>
+    <div class="detail-row"><strong>M-Pesa Transaction</strong><span>{{ invoice.mpesa_transaction_id|default:"Not provided" }}</span></div>
+</div>
+{% endblock %}

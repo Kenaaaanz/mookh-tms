@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container-fluid">
     {% if user.is_staff %}
-        {% include 'admin_dashboard.html' %}
+        {% include 'index.html' %}
     {% else %}
         {% include 'team_dashboard.html' %}
     {% endif %}

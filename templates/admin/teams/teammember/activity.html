@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .page-header { background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%); border-radius: 12px; padding: 1.5rem; color: white; margin-bottom: 2rem; }
+    .detail-card { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
+    .detail-card h4 { margin-bottom: 1rem; }
+    .activity-list { list-style: none; padding: 0; margin: 0; }
+    .activity-item { background: #f8fafc; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; }
+    .badge-status { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; }
+    .badge-lead { background: #f59e0b; color: white; }
+    .badge-member { background: #6b7280; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 mb-2"><i class="fas fa-chart-line mr-2"></i>Activity Log</h1>
+            <p class="mb-0">Team member activity for <strong>{{ team_member.user.get_full_name }}</strong>.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'admin:teams_teammember_change' team_member.id %}" class="btn btn-light">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="detail-card">
+    <h4>Assignment Summary</h4>
+    <div class="row">
+        <div class="col-md-4">
+            <p><strong>{{ assignments.count }}</strong> Assigned Events</p>
+        </div>
+        <div class="col-md-4">
+            <p><strong>{{ reports.count }}</strong> Reports Submitted</p>
+        </div>
+        <div class="col-md-4">
+            <p><strong>{{ invoices.count }}</strong> Invoices Created</p>
+        </div>
+    </div>
+</div>
+
+<div class="detail-card">
+    <h4>Recent Assignments</h4>
+    {% if assignments %}
+    <ul class="activity-list">
+        {% for assignment in assignments %}
+        <li class="activity-item">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <strong>{{ assignment.event.name }}</strong>
+                    <div class="text-muted">{{ assignment.event.start_date|date:"F d, Y" }} - {{ assignment.event.location }}</div>
+                </div>
+                <span class="badge-status {% if assignment.is_team_lead %}badge-lead{% else %}badge-member{% endif %}">
+                    {% if assignment.is_team_lead %}Team Lead{% else %}Member{% endif %}
+                </span>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-muted">No assignments found for this team member yet.</p>
+    {% endif %}
+</div>
+
+<div class="detail-card">
+    <h4>Recent Reports</h4>
+    {% if reports %}
+    <ul class="activity-list">
+        {% for report in reports %}
+        <li class="activity-item">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <strong>{{ report.event_assignment.event.name }}</strong>
+                    <div class="text-muted">Submitted {{ report.submitted_at|date:"F d, Y" }}</div>
+                </div>
+                <span class="badge-status {% if report.status == 'approved' %}badge-lead{% else %}badge-member{% endif %}">
+                    {{ report.get_status_display }}
+                </span>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-muted">No reports submitted yet.</p>
+    {% endif %}
+</div>
+
+<div class="detail-card">
+    <h4>Recent Invoices</h4>
+    {% if invoices %}
+    <ul class="activity-list">
+        {% for invoice in invoices %}
+        <li class="activity-item">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <strong>Invoice #{{ invoice.id }}</strong>
+                    <div class="text-muted">Total: KSh {{ invoice.total_amount }} | Due: {{ invoice.due_date|date:"F d, Y" }}</div>
+                </div>
+                <span class="badge-status {% if invoice.status == 'paid' %}badge-lead{% else %}badge-member{% endif %}">
+                    {{ invoice.get_status_display }}
+                </span>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-muted">No invoices created yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
