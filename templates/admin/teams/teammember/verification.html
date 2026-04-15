@@ -1,15 +1,21 @@
-{% extends "base.html" %}
-{% load static %}
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}Verification Status - {{ team_member.user.get_full_name }}{% endblock %}
 
 {% block extrastyle %}
 {{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
 <style>
     :root {
         --mookh-primary: #1E3A8A;
         --mookh-secondary: #3B82F6;
+        --mookh-accent: #10B981;
+        --mookh-light: #F8FAFC;
+        --mookh-dark: #1E293B;
     }
 
-    .page-header {
+    .member-header {
         background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
         border-radius: 12px;
         padding: 1.5rem;
@@ -18,59 +24,136 @@
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
-    .verification-card {
+    .admin-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .admin-tab {
+        flex: 1;
+        padding: 1rem;
+        text-align: center;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #64748B;
+        transition: all 0.3s ease;
+        background: transparent;
+        border: none;
+        text-decoration: none;
+        display: block;
+    }
+
+    .admin-tab:hover {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        color: var(--mookh-primary);
+        transform: translateY(-2px);
+        text-decoration: none;
+    }
+
+    .admin-tab.active {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+        box-shadow: 0 4px 10px rgba(30, 58, 138, 0.3);
+    }
+
+    .admin-tab i {
+        margin-right: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .tab-content-card {
         background: white;
         border-radius: 16px;
         padding: 2rem;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        max-width: 800px;
-        margin: 0 auto;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
-    .status-banner {
+    .tab-content-card:hover {
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .tab-content-card h2 {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .verification-badge {
+        text-align: center;
         padding: 2rem;
         border-radius: 12px;
-        text-align: center;
-        margin-bottom: 2rem;
+        margin-top: 1rem;
     }
 
-    .status-banner.verified {
+    .verification-badge.verified {
         background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
         border-left: 4px solid #10B981;
     }
 
-    .status-banner.pending {
+    .verification-badge.pending {
         background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
         border-left: 4px solid #F59E0B;
     }
 
-    .status-icon {
+    .verification-icon {
         font-size: 4rem;
         margin-bottom: 1rem;
     }
 
-    .status-title {
-        font-size: 2rem;
-        font-weight: 700;
+    .verification-badge h3 {
         margin-bottom: 0.5rem;
     }
 
-    .stats-grid {
+    .quick-stats-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.5rem;
-        margin: 2rem 0;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 2rem;
     }
 
-    .stat-card {
-        background: #f8fafc;
+    .stat-mini-card {
+        background: white;
         border-radius: 12px;
         padding: 1.5rem;
         text-align: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
-    .stat-number {
-        font-size: 2.5rem;
+    .stat-mini-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-mini-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+    }
+
+    .stat-mini-number {
+        font-size: 1.8rem;
         font-weight: 700;
         background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
         -webkit-background-clip: text;
@@ -78,22 +161,9 @@
         background-clip: text;
     }
 
-    .stat-label {
+    .stat-mini-label {
         color: #64748B;
-        margin-top: 0.5rem;
-    }
-
-    .activity-item {
-        padding: 1rem;
-        background: #f8fafc;
-        border-radius: 8px;
-        margin-bottom: 0.75rem;
-        transition: all 0.2s ease;
-    }
-
-    .activity-item:hover {
-        background: #f1f5f9;
-        transform: translateX(2px);
+        font-size: 0.875rem;
     }
 
     .action-button {
@@ -101,9 +171,23 @@
         border-radius: 8px;
         font-weight: 600;
         transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .action-button-primary {
+        background: linear-gradient(135deg, var(--mookh-primary) 0%, var(--mookh-secondary) 100%);
+        color: white;
+    }
+
+    .action-button-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+        color: white;
         text-decoration: none;
     }
 
@@ -112,22 +196,44 @@
         color: white;
     }
 
-    .action-button-warning {
-        background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+    .action-button-danger {
+        background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
         color: white;
     }
 
-    .action-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    .action-button-info {
+        background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
         color: white;
-        text-decoration: none;
+    }
+
+    .list-group-item {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+
+    .status-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 50rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .nav-info {
+        font-size: 0.875rem;
+        color: #64748B;
+        margin-top: 0.5rem;
+        text-align: center;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="member-header">
     <div class="row align-items-center">
         <div class="col-md-8">
             <h1 class="display-6 mb-2">
@@ -139,97 +245,174 @@
             </p>
         </div>
         <div class="col-md-4 text-md-end">
-            <a href="{% url 'admin:teams_teammember_change' team_member.id %}" class="btn btn-light">
-                <i class="fas fa-arrow-left mr-2"></i> Back to Profile
-            </a>
+            <span class="badge bg-light text-dark fs-6 p-2 px-3">
+                <i class="fas fa-calendar-alt mr-2"></i>
+                {% now "F d, Y" %}
+            </span>
         </div>
     </div>
 </div>
 
-<div class="verification-card">
-    <!-- Status Banner -->
-    <div class="status-banner {% if team_member.is_verified %}verified{% else %}pending{% endif %}">
-        <div class="status-icon">
+<!-- Tab Navigation -->
+<div class="admin-tabs">
+    <a href="{% url 'admin:teams_teammember_change' team_member.id %}" class="admin-tab">
+        <i class="fas fa-user"></i>
+        <span class="d-none d-md-inline">Personal Information</span>
+    </a>
+    
+    <a href="{% url 'team_member_payment' team_member.id %}" class="admin-tab">
+        <i class="fas fa-wallet"></i>
+        <span class="d-none d-md-inline">Payment Information</span>
+    </a>
+    
+    <a href="{% url 'team_member_verification' team_member.id %}" class="admin-tab active">
+        <i class="fas fa-shield-alt"></i>
+        <span class="d-none d-md-inline">Verification Status</span>
+    </a>
+    
+    <a href="{% url 'team_member_activity' team_member.id %}" class="admin-tab">
+        <i class="fas fa-chart-line"></i>
+        <span class="d-none d-md-inline">Activity Log</span>
+    </a>
+</div>
+
+<!-- Verification Content -->
+<div class="tab-content-card">
+    <h2>
+        <i class="fas fa-shield-alt mr-2"></i>
+        Account Verification
+    </h2>
+    
+    <div class="verification-badge {% if team_member.is_verified %}verified{% else %}pending{% endif %}">
+        <div class="verification-icon">
             <i class="fas {% if team_member.is_verified %}fa-check-circle{% else %}fa-clock{% endif %}"></i>
         </div>
-        <div class="status-title">
+        <h3>
             {% if team_member.is_verified %}
             Verified Account
             {% else %}
             Pending Verification
             {% endif %}
-        </div>
+        </h3>
         <p class="mb-0">
-            Account created on {{ team_member.created_at|date:"F d, Y" }}
+            <strong>Account Created:</strong> {{ team_member.created_at|date:"F d, Y H:i" }}
         </p>
-    </div>
-    
-    <!-- Statistics -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-number">{{ events_count }}</div>
-            <div class="stat-label">Assigned Events</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">{{ reports_count }}</div>
-            <div class="stat-label">Reports Submitted</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">{{ invoices_count }}</div>
-            <div class="stat-label">Invoices Created</div>
-        </div>
-    </div>
-    
-    <!-- Recent Activity -->
-    <h5 class="mb-3">Recent Activity</h5>
-    {% for assignment in recent_events %}
-    <div class="activity-item">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <strong>{{ assignment.event.name }}</strong>
-                <br>
-                <small class="text-muted">{{ assignment.event.start_date|date:"M d, Y" }}</small>
-            </div>
-            <span class="badge {% if assignment.is_team_lead %}bg-warning{% else %}bg-secondary{% endif %}">
-                {% if assignment.is_team_lead %}Team Lead{% else %}Member{% endif %}
-            </span>
-        </div>
-    </div>
-    {% empty %}
-    <p class="text-muted text-center py-3">No recent activity</p>
-    {% endfor %}
-    
-    <!-- Verification Actions -->
-    <hr class="my-4">
-    
-    <div class="text-center">
         {% if not team_member.is_verified %}
-        <p class="text-muted mb-3">
-            <i class="fas fa-exclamation-triangle mr-2 text-warning"></i>
-            This team member cannot submit invoices or reports until verified.
+        <p class="mt-2 mb-0">
+            <small>Team member cannot submit invoices or reports until verified</small>
         </p>
-        <form method="post" action="{% url 'admin:teams_teammember_changelist' %}">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="verify_selected_members">
-            <input type="hidden" name="_selected_action" value="{{ team_member.id }}">
-            <button type="submit" class="action-button action-button-success">
-                <i class="fas fa-check-circle mr-2"></i> Verify This Member
-            </button>
-        </form>
-        {% else %}
-        <p class="text-muted mb-3">
-            <i class="fas fa-check-circle mr-2 text-success"></i>
-            This team member can submit invoices and reports.
-        </p>
-        <form method="post" action="{% url 'admin:teams_teammember_changelist' %}">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="unverify_selected_members">
-            <input type="hidden" name="_selected_action" value="{{ team_member.id }}">
-            <button type="submit" class="action-button action-button-warning">
-                <i class="fas fa-times-circle mr-2"></i> Unverify This Member
-            </button>
-        </form>
         {% endif %}
     </div>
+    
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        
+        <div class="form-check mb-3">
+            <input type="checkbox" name="is_verified" id="is_verified" class="form-check-input" 
+                   value="true" {% if team_member.is_verified %}checked{% endif %}>
+            <label class="form-check-label" for="is_verified">
+                <strong>Mark as Verified</strong>
+                <br>
+                <small class="text-muted">When verified, the team member can submit invoices and reports</small>
+            </label>
+        </div>
+        
+        <div class="alert alert-info mt-3">
+            <i class="fas fa-info-circle mr-2"></i>
+            <strong>Verification Requirements:</strong>
+            <ul class="mt-2 mb-0">
+                <li>Valid phone number and M-Pesa details</li>
+                <li>Completed profile information</li>
+                <li>Agreement to terms and conditions</li>
+                <li>Background check completed (if applicable)</li>
+            </ul>
+        </div>
+        
+        <div class="mt-4">
+            <button type="submit" name="_save" class="action-button action-button-primary">
+                <i class="fas fa-save mr-2"></i> Update Verification Status
+            </button>
+            <a href="{% url 'admin:teams_teammember_change' team_member.id %}" class="btn btn-outline-secondary ml-2">
+                <i class="fas fa-times mr-2"></i> Cancel
+            </a>
+        </div>
+    </form>
 </div>
+
+<!-- Verification Statistics -->
+<div class="quick-stats-grid">
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="stat-mini-number">{{ events_count|default:"0" }}</div>
+        <div class="stat-mini-label">Assigned Events</div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #10B981 0%, #34D399 100%);">
+            <i class="fas fa-file-alt"></i>
+        </div>
+        <div class="stat-mini-number">{{ reports_count|default:"0" }}</div>
+        <div class="stat-mini-label">Reports Submitted</div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);">
+            <i class="fas fa-receipt"></i>
+        </div>
+        <div class="stat-mini-number">{{ invoices_count|default:"0" }}</div>
+        <div class="stat-mini-label">Invoices Created</div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="tab-content-card mt-4">
+    <h2>
+        <i class="fas fa-history mr-2"></i>
+        Recent Activity
+    </h2>
+    
+    {% if recent_events %}
+    <div class="list-group">
+        {% for event in recent_events|slice:":5" %}
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <strong>{{ event.name }}</strong>
+                <br>
+                <small class="text-muted">{{ event.start_date|date:"M d, Y" }}</small>
+            </div>
+            <span class="status-badge status-{{ event.status }}">
+                {{ event.get_status_display }}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted text-center py-4">No recent activity</p>
+    {% endif %}
+</div>
+
+<div class="nav-info mt-4">
+    <i class="fas fa-info-circle mr-1"></i>
+    Verified team members can fully participate in events and submit reports/invoices.
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const verifiedCheckbox = document.getElementById('is_verified');
+    if (verifiedCheckbox) {
+        verifiedCheckbox.addEventListener('change', function() {
+            const statusDiv = document.querySelector('.verification-badge');
+            if (this.checked) {
+                statusDiv.className = 'verification-badge verified';
+                statusDiv.querySelector('h3').textContent = 'Verified Account';
+                statusDiv.querySelector('.verification-icon i').className = 'fas fa-check-circle';
+            } else {
+                statusDiv.className = 'verification-badge pending';
+                statusDiv.querySelector('h3').textContent = 'Pending Verification';
+                statusDiv.querySelector('.verification-icon i').className = 'fas fa-clock';
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -1,116 +1,426 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block extrastyle %}
-{{ block.super }}
-<style>
-    .page-header { background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%); border-radius: 12px; padding: 1.5rem; color: white; margin-bottom: 2rem; }
-    .detail-card { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
-    .detail-card h4 { margin-bottom: 1rem; }
-    .activity-list { list-style: none; padding: 0; margin: 0; }
-    .activity-item { background: #f8fafc; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; }
-    .badge-status { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; }
-    .badge-lead { background: #f59e0b; color: white; }
-    .badge-member { background: #6b7280; color: white; }
-</style>
-{% endblock %}
+{% block title %}Activity Log - {{ team_member.user.get_full_name }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <h1 class="display-6 mb-2"><i class="fas fa-chart-line mr-2"></i>Activity Log</h1>
-            <p class="mb-0">Team member activity for <strong>{{ team_member.user.get_full_name }}</strong>.</p>
+<div class="row">
+    <div class="col-12">
+        <!-- Header Card -->
+        <div class="card bg-primary text-white mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-2">
+                            <i class="bi bi-activity me-2"></i> 
+                            Activity Log
+                        </h2>
+                        <p class="mb-0 opacity-75">
+                            Team member activity for <strong>{{ team_member.user.get_full_name }}</strong>
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <a href="{% url 'admin:teams_teammember_change' team_member.id %}" class="btn btn-light">
+                            <i class="bi bi-arrow-left me-2"></i> Back to Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="col-md-4 text-md-end">
-            <a href="{% url 'admin:teams_teammember_change' team_member.id %}" class="btn btn-light">
-                <i class="fas fa-arrow-left mr-2"></i> Back to Profile
-            </a>
+
+        <!-- Summary Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card border-primary h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Assigned Events</h6>
+                                <h3 class="card-title text-primary mb-0">{{ assignments.count }}</h3>
+                            </div>
+                            <div class="bg-primary text-white rounded-circle p-3">
+                                <i class="bi bi-calendar-event" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="card border-success h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Reports Submitted</h6>
+                                <h3 class="card-title text-success mb-0">{{ reports.count }}</h3>
+                            </div>
+                            <div class="bg-success text-white rounded-circle p-3">
+                                <i class="bi bi-file-text" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="card border-warning h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Invoices Created</h6>
+                                <h3 class="card-title text-warning mb-0">{{ invoices.count }}</h3>
+                            </div>
+                            <div class="bg-warning text-white rounded-circle p-3">
+                                <i class="bi bi-receipt" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <!-- Recent Assignments Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-check me-2"></i> 
+                    Recent Assignments
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if assignments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Event Name</th>
+                                <th>Location</th>
+                                <th>Event Dates</th>
+                                <th>Role</th>
+                                <th>Assigned On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments|slice:":10" %}
+                            <tr>
+                                <td>
+                                    <strong>{{ assignment.event.name }}</strong>
+                                    {% if assignment.event.description %}
+                                    <p class="text-muted mb-0 small">{{ assignment.event.description|truncatechars:40 }}</p>
+                                    {% endif %}
+                                </td>
+                                <td>{{ assignment.event.location|truncatechars:30 }}</td>
+                                <td>
+                                    {{ assignment.event.start_date|date:"M d, Y" }}<br>
+                                    <small class="text-muted">to {{ assignment.event.end_date|date:"M d, Y" }}</small>
+                                </td>
+                                <td>
+                                    {% if assignment.is_team_lead %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-star-fill me-1"></i> Team Lead
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-person me-1"></i> Member
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ assignment.assigned_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'admin:events_event_change' assignment.event.id %}" 
+                                       class="btn btn-sm btn-outline-primary" title="View Event">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if assignments.count > 10 %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'admin:events_eventassignment_changelist' %}?team_member__id__exact={{ team_member.id }}" 
+                       class="btn btn-outline-primary btn-sm">
+                        View All {{ assignments.count }} Assignments <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-calendar-x" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-2">No assignments found for this team member</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Reports Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-text me-2"></i> 
+                    Recent Reports
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if reports %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Hours</th>
+                                <th>Submitted</th>
+                                <th>Status</th>
+                                <th>Reviewed By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in reports|slice:":10" %}
+                            <tr>
+                                <td>
+                                    <strong>{{ report.event_assignment.event.name|truncatechars:40 }}</strong>
+                                </td>
+                                <td>{{ report.attendance_hours }} hrs</td>
+                                <td>{{ report.submitted_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ report.status }}">
+                                        {{ report.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if report.reviewed_by %}
+                                    {{ report.reviewed_by.get_full_name|default:report.reviewed_by.username }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'admin:invoices_eventreport_change' report.id %}" 
+                                           class="btn btn-sm btn-outline-primary" title="View Report">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if report.status == 'pending' %}
+                                        <a href="{% url 'admin:invoices_eventreport_change' report.id %}#review-information-tab" 
+                                           class="btn btn-sm btn-outline-warning" title="Review">
+                                            <i class="bi bi-check-circle"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if reports.count > 10 %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'admin:invoices_eventreport_changelist' %}?event_assignment__team_member__id__exact={{ team_member.id }}" 
+                       class="btn btn-outline-success btn-sm">
+                        View All {{ reports.count }} Reports <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-file-text" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-2">No reports submitted yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Invoices Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-receipt me-2"></i> 
+                    Recent Invoices
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if invoices %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Event</th>
+                                <th>Days</th>
+                                <th>Total Amount</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices|slice:":10" %}
+                            <tr>
+                                <td>
+                                    <strong>#{{ invoice.id }}</strong>
+                                </td>
+                                <td>{{ invoice.event_assignment.event.name|truncatechars:30 }}</td>
+                                <td>{{ invoice.number_of_days }}</td>
+                                <td>
+                                    <strong class="text-success">KSh {{ invoice.total_amount|floatformat:2 }}</strong>
+                                </td>
+                                <td>{{ invoice.due_date|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ invoice.status }}">
+                                        {{ invoice.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'admin:invoices_invoice_change' invoice.id %}" 
+                                           class="btn btn-sm btn-outline-primary" title="View Invoice">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if invoice.status == 'draft' %}
+                                        <a href="{% url 'admin:invoices_invoice_change' invoice.id %}" 
+                                           class="btn btn-sm btn-outline-success" title="Submit">
+                                            <i class="bi bi-send"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if invoice.status == 'submitted' %}
+                                        <a href="{% url 'admin:invoices_invoice_change' invoice.id %}#payment-information-tab" 
+                                           class="btn btn-sm btn-outline-warning" title="Verify">
+                                            <i class="bi bi-check-circle"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if invoices.count > 10 %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'admin:invoices_invoice_changelist' %}?event_assignment__team_member__id__exact={{ team_member.id }}" 
+                       class="btn btn-outline-warning btn-sm">
+                        View All {{ invoices.count }} Invoices <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-receipt" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-2">No invoices created yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Performance Summary (Optional) -->
+        {% if assignments %}
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i> 
+                    Performance Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-primary">{{ assignments.count }}</h4>
+                            <p class="text-muted mb-0">Total Events</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-success">
+                                {% if reports %}
+                                {{ reports|dictsort:"status"|dictsortreversed:"status"|first.get_status_display }}
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </h4>
+                            <p class="text-muted mb-0">Latest Report Status</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-warning">
+                                {% if invoices %}
+                                {{ invoices|dictsort:"status"|dictsortreversed:"status"|first.get_status_display }}
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </h4>
+                            <p class="text-muted mb-0">Latest Invoice Status</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
-<div class="detail-card">
-    <h4>Assignment Summary</h4>
-    <div class="row">
-        <div class="col-md-4">
-            <p><strong>{{ assignments.count }}</strong> Assigned Events</p>
-        </div>
-        <div class="col-md-4">
-            <p><strong>{{ reports.count }}</strong> Reports Submitted</p>
-        </div>
-        <div class="col-md-4">
-            <p><strong>{{ invoices.count }}</strong> Invoices Created</p>
-        </div>
+<!-- Guidelines Card (matching create_event.html style) -->
+<div class="card mt-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Activity Log Information</h5>
+    </div>
+    <div class="card-body">
+        <ul class="mb-0">
+            <li>This page shows all activity for the selected team member</li>
+            <li>View event assignments, reports, and invoices in one place</li>
+            <li>Click on any row to view detailed information</li>
+            <li>Use the action buttons to manage reports and invoices</li>
+            <li>Status badges indicate current progress of each item</li>
+        </ul>
     </div>
 </div>
+{% endblock %}
 
-<div class="detail-card">
-    <h4>Recent Assignments</h4>
-    {% if assignments %}
-    <ul class="activity-list">
-        {% for assignment in assignments %}
-        <li class="activity-item">
-            <div class="d-flex justify-content-between">
-                <div>
-                    <strong>{{ assignment.event.name }}</strong>
-                    <div class="text-muted">{{ assignment.event.start_date|date:"F d, Y" }} - {{ assignment.event.location }}</div>
-                </div>
-                <span class="badge-status {% if assignment.is_team_lead %}badge-lead{% else %}badge-member{% endif %}">
-                    {% if assignment.is_team_lead %}Team Lead{% else %}Member{% endif %}
-                </span>
-            </div>
-        </li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p class="text-muted">No assignments found for this team member yet.</p>
-    {% endif %}
-</div>
-
-<div class="detail-card">
-    <h4>Recent Reports</h4>
-    {% if reports %}
-    <ul class="activity-list">
-        {% for report in reports %}
-        <li class="activity-item">
-            <div class="d-flex justify-content-between">
-                <div>
-                    <strong>{{ report.event_assignment.event.name }}</strong>
-                    <div class="text-muted">Submitted {{ report.submitted_at|date:"F d, Y" }}</div>
-                </div>
-                <span class="badge-status {% if report.status == 'approved' %}badge-lead{% else %}badge-member{% endif %}">
-                    {{ report.get_status_display }}
-                </span>
-            </div>
-        </li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p class="text-muted">No reports submitted yet.</p>
-    {% endif %}
-</div>
-
-<div class="detail-card">
-    <h4>Recent Invoices</h4>
-    {% if invoices %}
-    <ul class="activity-list">
-        {% for invoice in invoices %}
-        <li class="activity-item">
-            <div class="d-flex justify-content-between">
-                <div>
-                    <strong>Invoice #{{ invoice.id }}</strong>
-                    <div class="text-muted">Total: KSh {{ invoice.total_amount }} | Due: {{ invoice.due_date|date:"F d, Y" }}</div>
-                </div>
-                <span class="badge-status {% if invoice.status == 'paid' %}badge-lead{% else %}badge-member{% endif %}">
-                    {{ invoice.get_status_display }}
-                </span>
-            </div>
-        </li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p class="text-muted">No invoices created yet.</p>
-    {% endif %}
-</div>
+{% block extra_css %}
+<style>
+    /* Additional styling to match create_event.html */
+    .status-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 50rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-pending { background-color: #FEF3C7; color: #92400E; }
+    .status-approved { background-color: #D1FAE5; color: #065F46; }
+    .status-rejected { background-color: #FEE2E2; color: #991B1B; }
+    .status-draft { background-color: #F3F4F6; color: #374151; }
+    .status-submitted { background-color: #FEF3C7; color: #92400E; }
+    .status-verified { background-color: #D1FAE5; color: #065F46; }
+    .status-paid { background-color: #10B981; color: white; }
+    
+    .card-header {
+        border-bottom: none;
+    }
+    
+    .table th {
+        font-weight: 600;
+        border-top: none;
+    }
+    
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .table-responsive {
+            font-size: 0.85rem;
+        }
+        
+        .btn-group .btn {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.75rem;
+        }
+    }
+</style>
 {% endblock %}

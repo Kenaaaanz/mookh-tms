@@ -180,13 +180,20 @@ def team_member_verification(request, member_id):
     }
     return render(request, 'admin/teams/teammember/verification.html', context)
 
+
+from django.contrib.admin.views.decorators import staff_member_required
+
 @staff_member_required
 def team_member_activity(request, member_id):
+    """
+    View to show all activity for a specific team member
+    """
     team_member = get_object_or_404(TeamMember, id=member_id)
     
-    assignments = EventAssignment.objects.filter(team_member=team_member).select_related('event')
-    reports = EventReport.objects.filter(event_assignment__team_member=team_member).select_related('event_assignment__event')
-    invoices = Invoice.objects.filter(event_assignment__team_member=team_member).select_related('event_assignment__event')
+    # Get all assignments, reports, and invoices for this team member
+    assignments = EventAssignment.objects.filter(team_member=team_member).select_related('event').order_by('-assigned_at')
+    reports = EventReport.objects.filter(event_assignment__team_member=team_member).select_related('event_assignment__event').order_by('-submitted_at')
+    invoices = Invoice.objects.filter(event_assignment__team_member=team_member).select_related('event_assignment__event').order_by('-created_at')
     
     context = {
         'team_member': team_member,
@@ -194,7 +201,6 @@ def team_member_activity(request, member_id):
         'reports': reports,
         'invoices': invoices,
         'title': f'Activity Log - {team_member.user.get_full_name()}',
-        'opts': team_member._meta,
-        'original': team_member,
     }
+    
     return render(request, 'admin/teams/teammember/activity.html', context)
